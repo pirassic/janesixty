@@ -16,7 +16,7 @@ Scope (decided 2026-10-04): Juno-60 only; AU, VST3 and standalone on macOS; no r
 | Offline sim and fitting | Python 3 (numpy, scipy, soundfile, matplotlib), ngspice or ACME.jl | |
 | CI | GitHub Actions macos-15 (arm64) building universal; macos-15-intel for Intel-side tests | free for public repos |
 
-Naming: **Jane-Sixty**, `jane60` identifiers, no Roland or Juno mark anywhere in code, bundle id, 4-character codes or artwork.
+Naming: **Jane-Sixty**, vendor **pirassic** (display name changeable at any time; the bundle id `com.pirassic.jane60` and the four-character manufacturer and plugin codes are frozen at v1.0 because hosts identify the plugin by them), `jane60` identifiers, no Roland or Juno mark anywhere in code, bundle id, 4-character codes or artwork.
 
 ## 2. Architecture
 
@@ -158,7 +158,8 @@ Rotary assignment, steal the oldest voice; non-rotary and unison as hidden modes
 - Exit: both extras work in Logic (MPE via a Seaboard-type controller or Logic's MPE test) and Cubase.
 
 ### Phase 6: release engineering (weeks 15 to 18)
-- Apple Developer ID signing, notarization, .pkg installer, Homebrew tap, GitHub Releases.
+- **Mac installer:** a signed and notarized `.pkg` built in CI (pkgbuild + productbuild) that installs the AU to `/Library/Audio/Plug-Ins/Components`, the VST3 to `/Library/Audio/Plug-Ins/VST3` and the standalone app to `/Applications`, with per-component choices, a welcome and licence pane, the factory preset bank, and an uninstall script. Also a plain zip and a Homebrew cask in the project's own tap. Universal binary, macOS 11 minimum.
+- Apple Developer ID Application and Installer certificates ($99/yr programme), hardened runtime, timestamped signatures, notarytool submission and stapling, all from CI secrets.
 - pluginval level 10 nightly, RADSan run, performance budget: six voices with chorus under 5 % of one Apple M1 core at 48 kHz / 128 samples.
 - User manual, MIDI implementation chart, preset format doc, contributing guide.
 - v1.0.

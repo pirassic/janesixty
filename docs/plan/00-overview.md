@@ -34,7 +34,7 @@ If a unit becomes available later, the bench protocol in the research plan is re
 
 ## Product name
 
-**Jane-Sixty** (owner's choice, 2026-10-04). Identifiers: `jane60` (bundle id suffix, CMake target, repo paths), display name "Jane-Sixty", vendor name to be chosen with it. Rationale: no letter sequence or vowel sound shared with the Roland mark; the model number is reused the way TAL (U-NO-LX) and Cherry Audio (DCO-106) do; a quiet nod to the mythology without the word. Rejected: JUNE-Sixty (one letter and one vowel from JUNO, reads as a pun on the mark). Earlier candidates (Hexa-60, DCO-6) are kept as fallbacks if a clearance search finds a conflict. A trademark database search is required before the first tagged release.
+**Jane-Sixty** (owner's choice, 2026-10-04). Identifiers: `jane60` (bundle id suffix, CMake target, repo paths), display name "Jane-Sixty", vendor "pirassic" (display vendor name changeable later; bundle id and manufacturer code frozen at v1.0). Rationale: no letter sequence or vowel sound shared with the Roland mark; the model number is reused the way TAL (U-NO-LX) and Cherry Audio (DCO-106) do; a quiet nod to the mythology without the word. Rejected: JUNE-Sixty (one letter and one vowel from JUNO, reads as a pun on the mark). Earlier candidates (Hexa-60, DCO-6) are kept as fallbacks if a clearance search finds a conflict. A trademark database search is required before the first tagged release.
 
 ## Panel photographs
 
