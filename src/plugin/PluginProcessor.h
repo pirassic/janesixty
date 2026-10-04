@@ -4,11 +4,14 @@
 #include <JuceHeader.h>
 
 #include "dsp/Calibration.h"
+#include "dsp/Synth.h"
+#include "dsp/presets/FactoryPatches.h"
+
+#include <vector>
 
 namespace jane60
 {
 
-/// Phase 0: an empty, host-valid synth that loads its calibration and does nothing else.
 class Jane60Processor final : public juce::AudioProcessor
 {
 public:
@@ -29,10 +32,11 @@ public:
     bool isMidiEffect() const override { return false; }
     double getTailLengthSeconds() const override { return 0.0; }
 
-    int getNumPrograms() override { return 1; }
-    int getCurrentProgram() override { return 0; }
-    void setCurrentProgram (int) override {}
-    const juce::String getProgramName (int) override { return {}; }
+    // The 56 factory patches are exposed as programs so hosts can recall them by number.
+    int getNumPrograms() override { return static_cast<int> (factory_.size()); }
+    int getCurrentProgram() override { return currentProgram_; }
+    void setCurrentProgram (int index) override;
+    const juce::String getProgramName (int index) override;
     void changeProgramName (int, const juce::String&) override {}
 
     void getStateInformation (juce::MemoryBlock& destData) override;
@@ -42,11 +46,15 @@ public:
     const Calibration& calibration() const noexcept { return calibration_; }
 
 private:
-    static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
     static Calibration loadEmbeddedCalibration();
+    static std::vector<FactoryPatch> loadEmbeddedFactoryPatches();
 
     Calibration calibration_;
+    std::vector<FactoryPatch> factory_;
     juce::AudioProcessorValueTreeState apvts_;
+    Synth synth_;
+    std::vector<MidiEvent> events_;
+    int currentProgram_ = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Jane60Processor)
 };

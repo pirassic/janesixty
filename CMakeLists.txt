@@ -38,7 +38,9 @@ FetchContent_MakeAvailable(nlohmann_json)
 # jane60_dsp: framework-free DSP and calibration library.
 # ---------------------------------------------------------------------------
 add_library(jane60_dsp STATIC
-    src/dsp/Calibration.cpp)
+    src/dsp/Calibration.cpp
+    src/dsp/Synth.cpp
+    src/dsp/presets/FactoryPatches.cpp)
 target_include_directories(jane60_dsp PUBLIC src)
 target_link_libraries(jane60_dsp PUBLIC nlohmann_json::nlohmann_json)
 target_compile_features(jane60_dsp PUBLIC cxx_std_20)
@@ -83,10 +85,10 @@ if(JANE60_BUILD_PLUGIN)
 
     target_sources(Jane60 PRIVATE
         src/plugin/PluginProcessor.cpp
-        src/plugin/PluginEditor.cpp)
+        src/plugin/Parameters.cpp)
 
     juce_add_binary_data(Jane60Data
-        SOURCES calibration/juno60.json)
+        SOURCES calibration/juno60.json calibration/factory_patches.csv)
 
     target_compile_definitions(Jane60 PUBLIC
         JUCE_WEB_BROWSER=0

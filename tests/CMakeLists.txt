@@ -5,11 +5,13 @@ FetchContent_Declare(Catch2
 FetchContent_MakeAvailable(Catch2)
 
 add_executable(jane60_tests
-    unit/CalibrationTests.cpp)
+    unit/CalibrationTests.cpp
+    unit/DspTests.cpp)
 
 target_link_libraries(jane60_tests PRIVATE jane60_dsp Catch2::Catch2WithMain)
 target_compile_definitions(jane60_tests PRIVATE
-    JANE60_CALIBRATION_FILE="${PROJECT_SOURCE_DIR}/calibration/juno60.json")
+    JANE60_CALIBRATION_FILE="${PROJECT_SOURCE_DIR}/calibration/juno60.json"
+    JANE60_FACTORY_PATCHES_FILE="${PROJECT_SOURCE_DIR}/calibration/factory_patches.csv")
 
 list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 include(Catch)
