@@ -27,3 +27,8 @@ Purpose: let anyone with a Juno-60, a laptop and an audio interface contribute r
 
 ## What it gives the project
 Items 1 to 3: DCO amplitude staircase, pulse law, sub and noise levels. 4 to 7: the expo converter law, resonance onset, depth curves. 8 to 9: envelope and LFO tables. 10: chorus rates, delay range, filter corners, noise. 11: HPF corners. 13: acceptance references for the preset bank.
+
+## Existing public recordings
+
+- Factory patch walkthrough (all 56 patches): https://www.youtube.com/watch?v=-hpDNlpjxZ8 (supplied by the owner, 2026-10-04). Usable as a perceptual and spectral reference for the preset-bank acceptance tests, because the panel state of each patch is known from the chart. Limits: unknown unit condition and calibration, YouTube's lossy codec (nothing above ~16 kHz is trustworthy, chorus clock residue is gone), unknown recording chain and level, and probably chorus and effects baked in. Treat as a sanity check, never as calibration data.
+- To use it: download the audio at the best available quality from a machine with access (this sandbox cannot reach YouTube), save as `reference/youtube-56-patches.wav` outside git, and make a timestamp table `reference/youtube-56-patches.csv` with columns `patch, start_s, end_s, notes_played` so each segment can be compared with the plugin's render of the same patch.
