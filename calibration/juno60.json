@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "_about": "Jane-Sixty calibration v0. Every entry is {value, source}. Source tags: service-notes (Juno-60 Service Notes, April 1983, page), owners-manual, schematic (read from the Service Notes drawings), published-measurement (named), simulation (to come), plugin-derived (sanity check only), assumed. See docs/research/05-manual-verified-facts.md.",
+
+  "clock": {
+    "masterClockHz":  { "value": 1902810, "source": "service-notes p.14" },
+    "tuningA4Hz":     { "value": 442.0,   "source": "service-notes p.14, p.23 (plugin default 440)" },
+    "benderMaxCents": { "value": 700,     "source": "service-notes p.14" },
+    "lfoMaxCents":    { "value": 300,     "source": "service-notes p.14" },
+    "tuneMaxCents":   { "value": 50,      "source": "service-notes p.14; owners-manual p.33" }
+  },
+
+  "dco": {
+    "sawVpp":                { "value": 12.0,  "source": "service-notes p.14 Fig.2, p.23 adj.4" },
+    "pwmCvAt50Pct":          { "value": -6.5,  "source": "service-notes p.14 Fig.2" },
+    "pwmCvAt97Pct":          { "value": -0.5,  "source": "service-notes p.14 Fig.2" },
+    "pulseMinDuty":          { "value": 0.50,  "source": "service-notes p.24 adj.9-1" },
+    "pulseMaxDuty":          { "value": 0.95,  "source": "service-notes p.24 adj.9-2" },
+    "kcvDacBits":            { "value": 7,     "source": "service-notes p.14 Fig.2" },
+    "kcvVoltsPerOctave":     { "value": 0.48,  "source": "service-notes p.14" },
+    "resetCapNf":            { "value": 1.0,   "source": "schematic p.9 C7 (Juno-6 reading, confirm)" },
+    "resetPulseCapPf":       { "value": 270,   "source": "schematic p.9 C6" },
+    "resetPulseResistorOhm": { "value": 10000, "source": "schematic p.9 R34" },
+    "noiseVppAtMax":         { "value": 4.0,   "source": "service-notes p.23 adj.6" }
+  },
+
+  "vcf": {
+    "inputResistorOhm":       { "value": 68000, "source": "schematic p.9 (standard IR3109 network)" },
+    "shuntResistorOhm":       { "value": 560,   "source": "schematic p.9" },
+    "stageCapPf":             { "value": 240,   "source": "schematic p.9" },
+    "qCompensation":          { "value": 0.308, "source": "assumed: Juno-6 schematic reading, verify on Juno-60 p.9" },
+    "anchorSliderPos":        { "value": 3.0,   "source": "service-notes p.22 Table 6 patch 84, p.24 adj.8-2" },
+    "anchorHz":               { "value": 248.0, "source": "service-notes p.24 adj.8-2" },
+    "selfOscVpp":             { "value": 4.0,   "source": "service-notes p.24 adj.8-1" },
+    "keyFollowPivotNote":     { "value": 60,    "source": "service-notes p.24 adj.8-3 (C4 = 248 Hz with KYBD 10)" },
+    "keyFollowOctPerOct":     { "value": 1.0,   "source": "service-notes p.24 adj.8-4 (C6 = 992 Hz)" },
+    "lfoFullDepthOct":        { "value": 3.3,   "source": "service-notes p.24 adj.8-7 (40..50 Hz to 4..5 kHz)" },
+    "envFullPeakHz":          { "value": 30000, "source": "service-notes p.24 adj.8-9 (T = 34 us)" },
+    "pedalDefaultVolts":      { "value": 3.0,   "source": "schematic p.10 jack board" },
+    "passbandLossAtMaxResDb": { "value": 7.2,   "source": "plugin-derived (PicoFaceJ6 vs Roland plugin); replace by simulation" }
+  },
+
+  "hpf": {
+    "cornerHz": { "value": [0, 154, 339, 720], "source": "schematic p.11 caps 0.022/0.01/0.0047 uF with 47 k (R derived); position 0 flat per owners-manual p.14" }
+  },
+
+  "vca": {
+    "voiceOutVpp": { "value": 4.0, "source": "service-notes p.23 adj.5-1" },
+    "gateRiseMs":  { "value": 3.0, "source": "published-measurement pendragon-andyh/Juno60" },
+    "gateFallMs":  { "value": 6.0, "source": "published-measurement pendragon-andyh/Juno60" }
+  },
+
+  "env": {
+    "attackSeconds":  { "value": [0.001, 0.0062, 0.0163, 0.030, 0.090, 0.240, 0.400, 0.650, 1.40, 2.20, 3.0],
+                        "source": "endpoints service-notes p.25 adj.10 (3 s) and spec (1 ms); 2.5/5/7.5 points published-measurement pendragon-andyh scaled 3.25 to 3.0; odd points interpolated (assumed)" },
+    "decaySeconds":   { "value": [0.002, 0.020, 0.050, 0.096, 0.350, 0.984, 2.20, 4.449, 7.0, 9.5, 12.0],
+                        "source": "endpoints owners-manual p.32 spec (2 ms, 12 s); 2.5/5/7.5 points published-measurement pendragon-andyh scaled 19.8 to 12; odd points interpolated (assumed)" },
+    "releaseSeconds": { "value": [0.002, 0.020, 0.050, 0.096, 0.350, 0.984, 2.20, 4.449, 7.0, 9.5, 12.0],
+                        "source": "as decaySeconds (release table measured identical to decay)" },
+    "sustainLevel":   { "value": [0.0, 0.155, 0.30, 0.435, 0.56, 0.67, 0.77, 0.86, 0.93, 0.98, 1.0],
+                        "source": "plugin-derived law 1-(1-s)^1.6; replace by measurement" },
+    "attackOvershootTarget": { "value": 1.58, "source": "published-measurement pendragon-andyh (curve (1-e^-x)/0.632)" },
+    "decayShapeK":           { "value": 4.6,  "source": "published-measurement pendragon-andyh (Hera fit)" },
+    "timingCapNf":           { "value": 47,   "source": "assumed: AMSynths IR3R01 note for Juno-6/60, confirm on schematic p.9" }
+  },
+
+  "lfo": {
+    "rateHz":           { "value": [0.3, 0.46, 0.65, 0.85, 1.7, 3.39, 6.2, 11.49, 15.0, 18.5, 22.0],
+                          "source": "endpoints owners-manual spec 0.3 Hz and service-notes p.23 adj.7-1 (22 Hz); 2.5/5/7.5 published-measurement pendragon-andyh; odd points interpolated (assumed)" },
+    "delayHoldSeconds": { "value": [0.0, 0.02, 0.045, 0.064, 0.40, 0.85, 1.05, 1.2, 1.5, 1.75, 2.0],
+                          "source": "service-notes p.24 adj.7-4 (2 s at 10); 2.5/5/7.5 published-measurement pendragon-andyh (2.69 at 10 on that unit, scaled); odd points interpolated (assumed)" },
+    "delayFadeSeconds": { "value": [0.0, 0.02, 0.04, 0.053, 0.12, 0.188, 0.27, 0.348, 0.55, 0.80, 1.0],
+                          "source": "published-measurement pendragon-andyh; odd points interpolated (assumed)" },
+    "dcoLfoGainVpp":    { "value": 14.0, "source": "service-notes p.23 adj.7-2" }
+  },
+
+  "chorus": {
+    "modes": [
+      { "name": "I",    "lfoRateHz": 0.513, "delayMinMs": 1.66, "delayMaxMs": 5.35, "stereo": true },
+      { "name": "II",   "lfoRateHz": 0.863, "delayMinMs": 1.66, "delayMaxMs": 5.35, "stereo": true },
+      { "name": "I+II", "lfoRateHz": 9.75,  "delayMinMs": 3.30, "delayMaxMs": 3.70, "stereo": false }
+    ],
+    "modesSource": "published-measurement pendragon-andyh/Juno60 (service-notes p.7 annotates ~0.5 / 0.8 Hz)",
+    "bbdStages":     { "value": 256, "source": "service-notes p.11, p.26 (MN3009)" },
+    "bbdPathGainDb": { "value": 2.3, "source": "published-measurement Holters & Parker DAFx-18" },
+    "dryGain":       { "value": 0.83, "source": "assumed: Hera fit; schematic ratio 47k/39k to be simulated" },
+    "wetGain":       { "value": 1.0,  "source": "assumed: Hera fit" }
+  },
+
+  "firmware": {
+    "sliderBits":  { "value": 8,   "source": "service-notes p.16 (successive-approximation ADC, 8 bits)" },
+    "panelLoopMs": { "value": 7.2, "source": "service-notes p.17 Fig.10" },
+    "voices":      { "value": 6,   "source": "owners-manual p.4" }
+  }
+}

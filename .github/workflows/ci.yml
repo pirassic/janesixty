@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "claude/**"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  dsp-tests-linux:
+    name: DSP library and tests (Linux, no JUCE)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DJANE60_BUILD_PLUGIN=OFF
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  plugin-macos:
+    name: Plugin (macOS universal, AU + VST3 + Standalone)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Configure
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+      - name: Build
+        run: cmake --build build
+      - name: Unit tests
+        run: ctest --test-dir build --output-on-failure
+      - name: Locate artefacts
+        id: art
+        run: |
+          echo "au=$(find build -name 'Jane-Sixty.component' -type d | head -1)" >> "$GITHUB_OUTPUT"
+          echo "vst3=$(find build -name 'Jane-Sixty.vst3' -type d | head -1)" >> "$GITHUB_OUTPUT"
+          echo "app=$(find build -name 'Jane-Sixty.app' -type d | head -1)" >> "$GITHUB_OUTPUT"
+      - name: Install AU for validation
+        run: |
+          mkdir -p ~/Library/Audio/Plug-Ins/Components
+          cp -R "${{ steps.art.outputs.au }}" ~/Library/Audio/Plug-Ins/Components/
+          killall -9 AudioComponentRegistrar 2>/dev/null || true
+      - name: auval
+        run: auval -strict -v aumu Jn60 Clvg
+      - name: pluginval
+        run: |
+          curl -sSL -o pluginval.zip https://github.com/Tracktion/pluginval/releases/latest/download/pluginval_macOS.zip
+          unzip -q pluginval.zip
+          ./pluginval.app/Contents/MacOS/pluginval --strictness-level 5 --validate-in-process --skip-gui-tests --validate "${{ steps.art.outputs.vst3 }}"
+          ./pluginval.app/Contents/MacOS/pluginval --strictness-level 5 --validate-in-process --skip-gui-tests --validate "${{ steps.art.outputs.au }}"
+      - name: Package artefacts
+        run: |
+          mkdir -p dist
+          ditto -c -k --keepParent "${{ steps.art.outputs.au }}" dist/Jane-Sixty-AU.zip
+          ditto -c -k --keepParent "${{ steps.art.outputs.vst3 }}" dist/Jane-Sixty-VST3.zip
+          ditto -c -k --keepParent "${{ steps.art.outputs.app }}" dist/Jane-Sixty-Standalone.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jane60-macos-unsigned
+          path: dist/*.zip
+          retention-days: 14
