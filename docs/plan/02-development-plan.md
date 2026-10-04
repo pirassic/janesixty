@@ -16,7 +16,7 @@ Scope (decided 2026-10-04): Juno-60 only; AU, VST3 and standalone on macOS; no r
 | Offline sim and fitting | Python 3 (numpy, scipy, soundfile, matplotlib), ngspice or ACME.jl | |
 | CI | GitHub Actions macos-15 (arm64) building universal; macos-15-intel for Intel-side tests | free for public repos |
 
-Naming: product name per the overview (Hexa-60 proposed), `hexa60` identifiers, no Roland or Juno mark anywhere in code, bundle id, 4-character codes or artwork.
+Naming: **Jane-Sixty**, `jane60` identifiers, no Roland or Juno mark anywhere in code, bundle id, 4-character codes or artwork.
 
 ## 2. Architecture
 

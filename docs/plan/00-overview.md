@@ -32,33 +32,23 @@ What this cannot deliver: the exact tanh drive level into the IR3109 (how much t
 
 If a unit becomes available later, the bench protocol in the research plan is ready, and the calibration file is designed to be replaced without touching the DSP code.
 
-## Name proposals
+## Product name
 
-Constraints: no "Roland", no "Juno", nothing confusable with Roland's JUNO-60 plugin or with TAL's U-NO-LX and Cherry's DCO-106; short; works as a plugin name, a bundle id and a repo slug; free of obvious existing audio products (checked only by memory, a trademark search is still needed before release).
-
-| Name | Why | Risk |
-|---|---|---|
-| **Hexa-60** | Six voices, 1960s-style Roland numbering, instantly reads as "a 60" | "60" alone may still evoke the Roland product; low risk, descriptive |
-| **DCO-6** | Names the defining component and the voice count; echoes Cherry's "DCO-106" convention | Close to Cherry Audio's naming pattern |
-| **Polysix** | Clean, says "six-voice poly" | Korg sold a "Polysix" synth; unusable as is |
-| **Sextant** | Six voices, a navigation instrument, period feel | No synth meaning at a glance |
-| **Lunaris** | Juno was a Roman goddess; the moon theme keeps the mythology without the mark | Several products use "Lunar" names |
-| **Hera-60** | Juno's Greek counterpart | jpcima already released an open-source Juno synth named "Hera" |
-| **Kinross-6** | Arbitrary place name, fully distinctive | Carries no meaning |
-| **Oxide-60** | Nods to the tape interface and 80s hardware | "60" risk as above |
-
-Owner's proposal (2026-10-04): **JUNE-Sixty**. Concern: one letter from JUNO, near-identical pronunciation, and the model number repeated, which is the pattern a confusing-similarity claim relies on; it reads as a pun on the mark rather than an original name. Decision pending; a clearance search is required before the first release whichever name is chosen.
-
-Recommendation: **Hexa-60** for the product, `hexa60` for identifiers, with "an open-source model of the Roland Juno-60" as the descriptive line and the standard trademark disclaimer. Second choice **DCO-6**. Both need a quick trademark database search before the first tagged release.
+**Jane-Sixty** (owner's choice, 2026-10-04). Identifiers: `jane60` (bundle id suffix, CMake target, repo paths), display name "Jane-Sixty", vendor name to be chosen with it. Rationale: no letter sequence or vowel sound shared with the Roland mark; the model number is reused the way TAL (U-NO-LX) and Cherry Audio (DCO-106) do; a quiet nod to the mythology without the word. Rejected: JUNE-Sixty (one letter and one vowel from JUNO, reads as a pun on the mark). Earlier candidates (Hexa-60, DCO-6) are kept as fallbacks if a clearance search finds a conflict. A trademark database search is required before the first tagged release.
 
 ## Panel photographs
 
-The owner supplied a straight-on 2000 px front photo (kept outside git). At 1060 mm panel width it gives about 1.9 px/mm, enough for layout, spacing and colour coding. Close-ups of a slider cap, an LED button and the display are still wanted for rendering detail. Further sources in research/06 section 6. Reference photographs are used only to measure layout and proportions and to draw an original vector panel. They are never redistributed in the repo.
+The owner supplied three photographs, kept outside git in the session scratchpad and to be stored privately by the owner:
+
+1. Straight-on front, 2000 px: layout, slider spacing, colour coding; about 1.9 px/mm against the 1060 mm width.
+2. Angled left-end view: slider cap profile (black, chamfered, white index line), the cream LFO TRIG button, the ribbed VOLUME knob with red index, bender lever, end-cheek bevel, rear logo strip.
+3. Top-down with power on: lit red LED indicators, red seven-segment display, section header ink colours, VCA LEVEL scale marked -5 to +5.
+
+These cover phase 3 needs. Further public sources in research/06 section 6. Reference photographs are used only to measure layout and proportions and to draw an original vector panel. They are never redistributed in the repo.
 
 ## What is needed from the owner now
 
-1. Settle the product name (see above).
-2. Close-up photos of a slider cap, an LED button and the display.
-3. Optional but high value: circulate `research/09-owner-capture-protocol.md` to Juno-60 owners.
+1. Go-ahead for phase 0.
+2. Optional but high value: circulate `research/09-owner-capture-protocol.md` to Juno-60 owners, and download the factory-patch video audio with a timestamp table.
 
 A Launchpad will be borrowed for phase 7. Nothing blocks phase 0.
