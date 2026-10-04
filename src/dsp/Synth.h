@@ -83,7 +83,6 @@ private:
     double arpPhase_ = 0.0;      // 0..1 within a step
     int arpSounding_ = -1;
     bool arpDirty_ = false;
-    int arpDirection_ = 1;
 };
 
 } // namespace jane60

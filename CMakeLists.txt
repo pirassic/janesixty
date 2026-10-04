@@ -47,7 +47,7 @@ target_compile_features(jane60_dsp PUBLIC cxx_std_20)
 if(MSVC)
     target_compile_options(jane60_dsp PRIVATE /W4)
 else()
-    target_compile_options(jane60_dsp PRIVATE -Wall -Wextra -Wpedantic -Wshadow -Wconversion)
+    target_compile_options(jane60_dsp PRIVATE -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wsign-conversion)
 endif()
 
 # ---------------------------------------------------------------------------
@@ -94,7 +94,6 @@ if(JANE60_BUILD_PLUGIN)
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST3_CAN_REPLACE_VST2=0
-        JUCE_DISPLAY_SPLASH_SCREEN=0
         JUCE_REPORT_APP_USAGE=0)
 
     target_link_libraries(Jane60 PRIVATE

@@ -119,7 +119,7 @@ public:
         preA_.set (9690.0, 0.55, sampleRate);
         preB_.set (10340.0, 1.24, sampleRate);
         // Post-BBD chain per channel: pairs 8.87 kHz Q 0.54 and 10.38 kHz Q 1.24, real 28 kHz.
-        for (int ch = 0; ch < 2; ++ch)
+        for (std::size_t ch = 0; ch < 2; ++ch)
         {
             postA_[ch].set (8870.0, 0.54, sampleRate);
             postB_[ch].set (10380.0, 1.24, sampleRate);
