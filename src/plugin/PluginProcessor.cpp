@@ -23,7 +23,8 @@ Jane60Processor::Jane60Processor()
     : AudioProcessor (BusesProperties().withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
       calibration_ (loadEmbeddedCalibration()),
       factory_ (loadEmbeddedFactoryPatches()),
-      apvts_ (*this, nullptr, "JANE60", params::createLayout())
+      apvts_ (*this, &undo_, "JANE60", params::createLayout()),
+      presets_ (apvts_, factory_)
 {
     events_.reserve (1024);
 }
@@ -100,7 +101,7 @@ void Jane60Processor::setCurrentProgram (int index)
     if (index < 0 || index >= static_cast<int> (factory_.size()))
         return;
     currentProgram_ = index;
-    params::writePanel (apvts_, factory_[static_cast<std::size_t> (index)].panel);
+    presets_.load (index); // factory entries are the first 56 browser entries
 }
 
 const juce::String Jane60Processor::getProgramName (int index)
@@ -115,6 +116,7 @@ void Jane60Processor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto state = apvts_.copyState();
     state.setProperty ("program", currentProgram_, nullptr);
+    presets_.writeTo (state);
     if (auto xml = state.createXml())
         copyXmlToBinary (*xml, destData);
 }
@@ -128,6 +130,7 @@ void Jane60Processor::setStateInformation (const void* data, int sizeInBytes)
             auto tree = juce::ValueTree::fromXml (*xml);
             currentProgram_ = static_cast<int> (tree.getProperty ("program", 0));
             apvts_.replaceState (tree);
+            presets_.readFrom (tree);
         }
     }
 }

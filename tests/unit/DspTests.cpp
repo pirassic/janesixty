@@ -431,3 +431,36 @@ TEST_CASE ("key transpose shifts pitch upward by the chosen interval")
     CHECK_THAT (freqOf (0), WithinRel (440.0, 0.01));
     CHECK_THAT (freqOf (7), WithinRel (440.0 * std::exp2 (7.0 / 12.0), 0.01));
 }
+
+#include "dsp/presets/PresetFormat.h"
+
+TEST_CASE ("preset JSON round-trips every patch field and rejects bad input")
+{
+    std::ifstream in (JANE60_FACTORY_PATCHES_FILE);
+    std::stringstream ss;
+    ss << in.rdbuf();
+    const auto patches = parseFactoryPatches (ss.str());
+    for (const auto& fp : patches)
+    {
+        Preset p;
+        p.name = fp.name;
+        p.bank = "Factory";
+        p.tags = { "factory" };
+        p.panel = fp.panel;
+        const auto text = presetToJson (p);
+        const auto back = presetFromJson (text);
+        INFO ("patch " << fp.number);
+        CHECK (back.name == fp.name);
+        CHECK (patchFieldsEqual (back.panel, fp.panel));
+    }
+    CHECK_THROWS_AS (presetFromJson ("{}"), std::runtime_error);
+    CHECK_THROWS_AS (presetFromJson ("{\"schema\":1}"), std::runtime_error);
+    CHECK_THROWS_AS (presetFromJson ("not json"), std::runtime_error);
+
+    // Performance fields are not part of a preset.
+    PanelState a = patches[0].panel, b = patches[0].panel;
+    b.arpOn = true; b.volume = 2.0; b.hold = true;
+    CHECK (patchFieldsEqual (a, b));
+    b.vcfFreq += 0.5;
+    CHECK_FALSE (patchFieldsEqual (a, b));
+}

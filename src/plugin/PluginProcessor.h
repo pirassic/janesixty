@@ -6,6 +6,7 @@
 #include "dsp/Calibration.h"
 #include "dsp/Synth.h"
 #include "dsp/presets/FactoryPatches.h"
+#include "PresetManager.h"
 
 #include <vector>
 
@@ -44,6 +45,8 @@ public:
 
     juce::AudioProcessorValueTreeState& state() noexcept { return apvts_; }
     const Calibration& calibration() const noexcept { return calibration_; }
+    PresetManager& presets() noexcept { return presets_; }
+    juce::UndoManager& undoManager() noexcept { return undo_; }
 
 private:
     static Calibration loadEmbeddedCalibration();
@@ -51,7 +54,9 @@ private:
 
     Calibration calibration_;
     std::vector<FactoryPatch> factory_;
+    juce::UndoManager undo_;
     juce::AudioProcessorValueTreeState apvts_;
+    PresetManager presets_;
     Synth synth_;
     std::vector<MidiEvent> events_;
     int currentProgram_ = 0;

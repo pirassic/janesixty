@@ -40,7 +40,8 @@ FetchContent_MakeAvailable(nlohmann_json)
 add_library(jane60_dsp STATIC
     src/dsp/Calibration.cpp
     src/dsp/Synth.cpp
-    src/dsp/presets/FactoryPatches.cpp)
+    src/dsp/presets/FactoryPatches.cpp
+    src/dsp/presets/PresetFormat.cpp)
 target_include_directories(jane60_dsp PUBLIC src)
 target_link_libraries(jane60_dsp PUBLIC nlohmann_json::nlohmann_json)
 target_compile_features(jane60_dsp PUBLIC cxx_std_20)
@@ -85,7 +86,8 @@ if(JANE60_BUILD_PLUGIN)
 
     target_sources(Jane60 PRIVATE
         src/plugin/PluginProcessor.cpp
-        src/plugin/Parameters.cpp)
+        src/plugin/Parameters.cpp
+        src/plugin/PresetManager.cpp)
 
     juce_add_binary_data(Jane60Data
         SOURCES calibration/juno60.json calibration/factory_patches.csv)
