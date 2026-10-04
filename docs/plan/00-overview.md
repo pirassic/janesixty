@@ -1,85 +1,60 @@
-# jnsynth: project overview and open decisions
+# jnsynth: project overview and decisions
 
-Goal: an open-source, component-modelled (not sampled) recreation of the Roland Juno-60, with a Juno-106 mode, as a native macOS AU / VST3 / AAX plugin and standalone app, with a panel that matches the original in look and feel plus modern preset management, A/B compare and a full MIDI implementation.
+Goal: an open-source, component-modelled (not sampled) recreation of the Roland Juno-60 as a native macOS AU and VST3 plugin and standalone app, with a panel that matches the original in layout and feel plus modern preset management, A/B compare, a full MIDI implementation, and a later Polyend-style scale and chord performance layer.
 
 Companion documents:
 
-- `01-research-plan.md`: what still has to be learned, how, and what source inputs are needed from the owner of a real unit.
+- `01-research-plan.md`: what still has to be learned and how, without reference hardware.
 - `02-development-plan.md`: architecture, phases, milestones, acceptance criteria.
-- `../research/`: the compiled research notes the plans rest on.
+- `../research/`: compiled research notes. `05-manual-verified-facts.md` is the authority where notes conflict; it was written from a first-hand read of both manuals.
 
-## Where things stand after the first research pass
+## Decisions taken (2026-10-04)
 
-What is already known well enough to start building:
+| # | Decision | Consequence |
+|---|---|---|
+| 1 | **Juno-60 only.** No 106 mode for now. | One calibration table, one panel, IR3R01 analogue envelopes, 56 patches, DCB-era behaviour. The DSP stays structured so a 106 variant could be added later, but nothing is built for it. |
+| 2 | **No reference hardware.** | Fidelity target is defined in section "What identical means without a unit" below. The research plan's bench session is replaced by a document-and-prior-art calibration, with a bench protocol kept on file for anyone who later has a unit. |
+| 3 | **AU + VST3 + standalone. AAX dropped.** | No Avid or PACE dependencies, CI can build and sign every artefact, forks can ship everything. |
+| 4 | **Original product name**, no Roland or Juno mark in name, bundle id, plugin codes or logo. | Candidates in section "Name proposals". Panel layout, proportions, colour coding and control behaviour are reproduced; lettering, logo and textures are original. |
+| 5 | **Velocity and MPE exist as opt-in extras**, off by default. | Implemented as settings toggles outside the panel: velocity routing (to VCA, VCF ENV depth, or both, with amount) and MPE (per-note bend and pressure to the same destinations). When off, the synth behaves exactly like the hardware: no velocity, channel-wide bend only. |
+| 6 | **Polyend-style performance layer** (scale mode and chord mode, both toggleable) with Mac keyboard input in the standalone app and pad-controller input with LED feedback, Novation Circuit Rhythm first. | Built as a MIDI input transform ahead of the voice allocator, bypassable, in its own phase after the Juno model is accepted. See development plan phase 7. |
 
-- Full signal flow and the per-voice vs shared split (research/01 section 1).
-- DCO principle, counter resolution, reset circuit values, PWM law, sub derivation.
-- IR3109 topology and the standard Roland component values (68 k / 560 R / 240 pF), resonance via BA662, input-side Q compensation, 248 Hz calibration anchor, C4 key-follow pivot.
-- HPF caps and corners (154 / 339 / 720 Hz, position 0 flat on the 60).
-- Envelope timing tables from a real unit, curve shapes, decay independent of sustain.
-- LFO rate and delay tables from a real unit.
-- Chorus: BBD count, measured LFO rates and delay ranges for I / II / I+II, pre and post filter pole sets from the schematic, summer ratios, mute behaviour.
-- Voice assignment rules, arpeggio, hold, key transpose, memory and tape behaviour, the 56 factory patches.
-- Juno-106 differences, SysEx format, prior art and the modelling literature per block.
-- Engineering stack, AAX constraints, macOS signing, UI approach, trademark practice.
+## What "identical" means without a unit
 
-What is not known and cannot be settled from paper (research/01 section 12): absolute levels into the filter, the OTA saturation point, cutoff slider to Hz curve, ENV and LFO depth in octaves, envelope sustain law, saw amplitude staircase, chorus pre-filter corner (6.5 vs 9.7 kHz), BBD noise and clock residue, HPF position 0, firmware timing. These need a bench session on a real, freshly calibrated unit. The research plan specifies exactly which recordings.
+With no hardware to measure, the model cannot be fitted to a specific instrument. What it can be fitted to, in order of authority:
 
-Note on sources: the four URLs supplied with the brief (owner's manual, service manual, Anwander, Thea Flowers) were all unreachable from this sandbox's network policy. Thea's article was read from its GitHub source. The two manuals and Anwander's pages were reconstructed from secondary sources that quote them with page and figure references. Both PDFs should be read first-hand by a person before the behaviour spec is frozen; the checklist is in research/02 section 9.
+1. **The Service Notes calibration targets.** These define what a correctly adjusted Juno-60 does, in numbers: master clock 1 902 810 Hz, divisor 4305 for 442 Hz; saw 12 Vp-p; PWM 50 % and 95 % endpoints; VCA 4 Vp-p; VCF self-oscillation 248 Hz at FREQ 3 with resonance 4 Vp-p; key follow 1 octave per octave pivoting at C4; VCF LFO full depth sweeping 40 Hz to 5 kHz; VCF ENV full depth reaching 30 kHz; attack 3 s at slider top; LFO 22 Hz at slider top with 14 Vp-p; delay 2 s; noise 4 Vp-p. A unit that passes the adjustment procedure meets these, so a model that meets them matches every well-serviced Juno-60 to within the procedure's tolerances.
+2. **The schematic.** Component values and topology for the DCO, mixer, IR3109 cascade, resonance path, HPF, VCA, chorus filters and BBD line. Where the model is a circuit model, the schematic is the specification. Offline SPICE or ACME.jl simulation of these netlists provides frequency responses, harmonic behaviour and step responses that the real-time model is tested against.
+3. **Published measurements of real units.** pendragon-andyh's envelope, LFO, chorus and HPF measurements (one Juno-60), Holters and Parker's BBD measurement, and the forum-reported chorus rates. These fill the gaps the schematic leaves: slider laws, chorus delay range, BBD gain.
+4. **Commercial emulations as a secondary check.** Roland's own plugin and TAL-U-NO-LX were each calibrated against real units. They are used only to sanity-check slider tapers and depth curves where the hardware documents are silent, never as the target.
 
-## Decisions that need the owner's call
+What this cannot deliver: the exact tanh drive level into the IR3109 (how much the filter "growls" at full mixer level), the BBD noise floor and clock residue spectrum, the DCO saw flyback shape, per-voice tolerances, and the exact slider taper of every pot. For those the plan uses the schematic-derived value plus a documented uncertainty, exposed as a user-facing "condition" control where it matters audibly (filter drive, chorus noise, voice spread). Fidelity claims in the README will say exactly this.
 
-### 1. Which instrument is the primary target?
+If a unit becomes available later, the bench protocol in the research plan is ready, and the calibration file is designed to be replaced without touching the DSP code.
 
-The brief names both the Juno-60 and the Juno-106 and supplied Juno-60 manuals. They are not the same instrument: the 106 has software envelopes, a crystal-clocked CPU with quantised vibrato and portamento, a bass-boost HPF position, no arpeggiator, no ENV-PWM, 128 patches and MIDI SysEx. A model that is faithful to one is not faithful to the other.
+## Name proposals
 
-Recommendation: **Juno-60 first, as the reference model**, because its envelopes and clock are analogue and the available measurements are for the 60. Add a **106 mode** as a second phase that switches the envelope generator to the firmware model, changes the HPF table, LFO range, voice allocation modes, adds portamento and the 128-patch SysEx import. The two share the DCO core, filter, VCA and chorus models with different calibration tables.
+Constraints: no "Roland", no "Juno", nothing confusable with Roland's JUNO-60 plugin or with TAL's U-NO-LX and Cherry's DCO-106; short; works as a plugin name, a bundle id and a repo slug; free of obvious existing audio products (checked only by memory, a trademark search is still needed before release).
 
-### 2. "Identical sounding" to what?
+| Name | Why | Risk |
+|---|---|---|
+| **Hexa-60** | Six voices, 1960s-style Roland numbering, instantly reads as "a 60" | "60" alone may still evoke the Roland product; low risk, descriptive |
+| **DCO-6** | Names the defining component and the voice count; echoes Cherry's "DCO-106" convention | Close to Cherry Audio's naming pattern |
+| **Polysix** | Clean, says "six-voice poly" | Korg sold a "Polysix" synth; unusable as is |
+| **Sextant** | Six voices, a navigation instrument, period feel | No synth meaning at a glance |
+| **Lunaris** | Juno was a Roman goddess; the moon theme keeps the mythology without the mark | Several products use "Lunar" names |
+| **Hera-60** | Juno's Greek counterpart | jpcima already released an open-source Juno synth named "Hera" |
+| **Kinross-6** | Arbitrary place name, fully distinctive | Carries no meaning |
+| **Oxide-60** | Nods to the tape interface and 80s hardware | "60" risk as above |
 
-No two Junos sound identical; they drift and age. Three possible targets:
+Recommendation: **Hexa-60** for the product, `hexa60` for identifiers, with "an open-source model of the Roland Juno-60" as the descriptive line and the standard trademark disclaimer. Second choice **DCO-6**. Both need a quick trademark database search before the first tagged release.
 
-- (a) the design as specified by the Service Notes calibration procedure (a perfectly calibrated unit);
-- (b) one specific reference unit, measured;
-- (c) (a) plus a "condition" layer of per-voice tolerances that can be dialled from factory-fresh to worn.
+## Panel photographs
 
-Recommendation: **(c)**, with (b) as the acceptance test. Calibrate the reference unit per Service Notes, measure it, fit the model to it, then expose per-voice tolerance as a user control. This is also what Roland's own v2 plugin does.
+The Audiofanzine gallery and other candidate sources are being checked (see research/06 when it lands). Reference photographs are used only to measure layout and proportions and to draw an original vector panel. They are never redistributed in the repo.
 
-### 3. "Model the original components exactly"
+## What is needed from the owner now
 
-A real-time SPICE simulation of six voices plus chorus is not feasible on a laptop CPU, and nobody ships one. What is feasible and is the state of the art:
-
-- white-box models derived from the schematic (nodal DK or wave digital filters for the chorus board and HPF; a nonlinear zero-delay-feedback OTA cascade for the IR3109 with per-stage tanh; a time-domain integrator model for the DCO with the exact 8253 integer period);
-- offline SPICE or ACME.jl simulation of each circuit as a reference to validate the real-time model against;
-- component values taken from the schematic, with the few unknowns (OTA bias currents, BBD transfer loss, DAC staircase) fitted to bench measurements.
-
-This is what the plan proposes. It is "component modelling" in the honest sense; it is not a transistor-level simulation in real time.
-
-### 4. AAX and Pro Tools
-
-An open-source project can legally build AAX (the SDK inside JUCE is usable under GPLv3), but Pro Tools only loads AAX binaries signed with PACE tooling tied to the maintainer's iLok. CI cannot sign; forks cannot ship AAX. Surge XT, Dexed and Odin 2 all decided not to ship AAX for this reason.
-
-Recommendation: build AAX in CI from day one so it never rots, register as an Avid developer, and sign releases from the maintainer's machine. Document it as "maintainer-signed". AU and VST3 cover Logic and Cubase with no such constraint.
-
-### 5. Look and feel vs trade dress
-
-The brief says the look and feel must match the original. Roland has registered or applied for JUNO-60 and JUNO-106 as marks, registered the visual design of other instruments, litigated over trade dress, and sells a competing JUNO-60 plugin. Every emulation on the market (TAL, Cherry Audio, Arturia) keeps the layout and colour coding but uses its own name, lettering, logo and textures.
-
-Recommendation: reproduce the **layout, control types, proportions, colour coding, LED and slider behaviour exactly**, draw the panel in vector with own lettering and an original name and logo, and never use "Roland" or "Juno" in the product name, bundle identifier or plugin codes. The repo name "jnsynth" is fine. Factory patches: ship the 56 as the acceptance-test set in the repo; whether to ship them as the default bank or under community-made names is a licensing judgment for the owner.
-
-### 6. Scope of "full MIDI implementation"
-
-Proposed: note on/off, pitch bend with range, mod wheel to LFO depth, CC64 hold, CC for every panel control with a documented default map, 14-bit CC pairs, NRPN, MIDI learn, program change plus bank select to presets, Juno-106 SysEx parameter and patch messages both in and out (so the plugin can act as an editor for a real 106), MIDI 2.0 UMP accepted where the host delivers it, MPE off by default. Velocity is not part of the original; offer it as an opt-in modern feature.
-
-### 7. Platform scope
-
-macOS only as asked, universal binary, deployment target macOS 11. The code will be portable (JUCE, CMake) so Windows and Linux builds are a later decision, not a rewrite.
-
-## What the owner can do right now to unblock the plan
-
-See `01-research-plan.md` section 5 for the full list. The short version:
-
-1. Confirm decisions 1 to 6 above.
-2. Download the two PDFs and work through the checklist in research/02 section 9, or share them privately (do not commit Roland PDFs to the public repo).
-3. Say whether a real Juno-60 (and/or 106) is available for a bench session, and what audio and test gear is on hand.
-4. Provide high-resolution, straight-on photographs of the panel, bender panel and rear panel with a ruler in frame, for the UI.
+1. Confirm the product name or pick another.
+2. Say whether the performance layer must also support a second controller family beyond the Circuit Rhythm (Launchpad, Move), or Circuit Rhythm only for v1 of that phase.
+3. Nothing else blocks phase 0.

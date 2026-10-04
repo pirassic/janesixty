@@ -1,5 +1,7 @@
 # Juno-60 panel and behaviour specification
 
+> **Corrections (2026-10-04):** the owner's manual has since been read first-hand; see `05-manual-verified-facts.md`, which supersedes this file where they conflict. Known errors below: there is **no RANGE 16'/8'/4' switch** (section 2.4 and section 3); **OCTAVE TRANSPOSE is stored in the patch** (section 3); the edit indicator is **both decimal points**; the octave switch legend is DOWN / NORMAL / UP; the factory patch chart has an octave-transpose column (see 05, section 4) and chorus I+II is a stored value.
+
 Status: research notes, compiled 2026-10-03. The owner's manual PDF itself was not readable from this sandbox (host blocked). Content comes from Roland's published spec sheet, search-engine snippets of manual text, the Service Notes as quoted by secondary projects, bench measurements (pendragon-andyh/Juno60) and the factory patch sheet transcription in dzannotti/junox. Items marked **[UNVERIFIED]** or **[AMBIGUOUS]** need checking against the PDF; see the checklist at the end.
 
 ## 1. Architecture summary
