@@ -47,14 +47,18 @@ Constraints: no "Roland", no "Juno", nothing confusable with Roland's JUNO-60 pl
 | **Kinross-6** | Arbitrary place name, fully distinctive | Carries no meaning |
 | **Oxide-60** | Nods to the tape interface and 80s hardware | "60" risk as above |
 
+Owner's proposal (2026-10-04): **JUNE-Sixty**. Concern: one letter from JUNO, near-identical pronunciation, and the model number repeated, which is the pattern a confusing-similarity claim relies on; it reads as a pun on the mark rather than an original name. Decision pending; a clearance search is required before the first release whichever name is chosen.
+
 Recommendation: **Hexa-60** for the product, `hexa60` for identifiers, with "an open-source model of the Roland Juno-60" as the descriptive line and the standard trademark disclaimer. Second choice **DCO-6**. Both need a quick trademark database search before the first tagged release.
 
 ## Panel photographs
 
-The Audiofanzine gallery and other candidate sources are being checked (see research/06 when it lands). Reference photographs are used only to measure layout and proportions and to draw an original vector panel. They are never redistributed in the repo.
+The owner supplied a straight-on 2000 px front photo (kept outside git). At 1060 mm panel width it gives about 1.9 px/mm, enough for layout, spacing and colour coding. Close-ups of a slider cap, an LED button and the display are still wanted for rendering detail. Further sources in research/06 section 6. Reference photographs are used only to measure layout and proportions and to draw an original vector panel. They are never redistributed in the repo.
 
 ## What is needed from the owner now
 
-1. Confirm the product name or pick another.
-2. Say whether the performance layer must also support a second controller family beyond the Circuit Rhythm (Launchpad, Move), or Circuit Rhythm only for v1 of that phase.
-3. Nothing else blocks phase 0.
+1. Settle the product name (see above).
+2. Close-up photos of a slider cap, an LED button and the display.
+3. Optional but high value: circulate `research/09-owner-capture-protocol.md` to Juno-60 owners.
+
+A Launchpad will be borrowed for phase 7. Nothing blocks phase 0.
