@@ -41,6 +41,12 @@ inline constexpr const char* benderDco = "benderDco";
 inline constexpr const char* benderVcf = "benderVcf";
 inline constexpr const char* volume = "volume";
 inline constexpr const char* tune = "tune";
+inline constexpr const char* arpOn = "arpOn";
+inline constexpr const char* arpMode = "arpMode";
+inline constexpr const char* arpRange = "arpRange";
+inline constexpr const char* arpRate = "arpRate";
+inline constexpr const char* hold = "hold";
+inline constexpr const char* keyTranspose = "keyTranspose";
 
 juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
 

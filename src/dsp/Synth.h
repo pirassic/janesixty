@@ -4,6 +4,7 @@
 
 #include "dsp/Calibration.h"
 #include "dsp/PanelState.h"
+#include "dsp/chorus/ChorusBoard.h"
 #include "dsp/core/MasterClock.h"
 #include "dsp/dco/Dco.h"
 #include "dsp/hpf/Hpf.h"
@@ -20,7 +21,7 @@ namespace jane60
 
 struct MidiEvent
 {
-    enum class Type : std::uint8_t { noteOn, noteOff, pitchBend, allNotesOff, lfoTrig };
+    enum class Type : std::uint8_t { noteOn, noteOff, pitchBend, allNotesOff, lfoTrig, holdPedal };
     int sampleOffset = 0;
     Type type = Type::noteOn;
     int note = 0;
@@ -43,10 +44,16 @@ public:
 
 private:
     void handle (const MidiEvent& e) noexcept;
-    void noteOn (int note) noexcept;
-    void noteOff (int note) noexcept;
+    void keyDown (int note) noexcept;
+    void keyUp (int note) noexcept;
+    void voiceOn (int note) noexcept;
+    void voiceOff (int note) noexcept;
+    void releaseUnheld() noexcept;
+    void rebuildArpPattern() noexcept;
+    void arpTick() noexcept;
     void updateControls() noexcept;
     int transposeSemis() const noexcept;
+    bool holdActive() const noexcept { return panel_.hold || pedal_; }
 
     const Calibration* cal_ = nullptr;
     double sr_ = 48000.0;
@@ -57,11 +64,26 @@ private:
     Lfo lfo_;
     NoiseSource noise_;
     Hpf hpf_;
+    ChorusBoard chorus_;
     std::array<Voice, kVoices> voices_;
 
     int nextVoice_ = 0;          // rotary assignment pointer
-    int heldKeys_ = 0;           // for the LFO AUTO phrase detection
     double bender_ = 0.0;        // -1..1
+    bool pedal_ = false;         // PEDAL HOLD jack
+
+    // Keyboard state: physically held keys and HOLD-latched keys, in press order.
+    std::vector<int> physical_;
+    std::vector<int> latched_;   // keys sounding (held or latched), press order, max 6 when latched
+    bool lastArpOn_ = false;
+    bool lastHold_ = false;
+
+    // Arpeggiator
+    std::vector<int> arpPattern_;
+    std::size_t arpIndex_ = 0;
+    double arpPhase_ = 0.0;      // 0..1 within a step
+    int arpSounding_ = -1;
+    bool arpDirty_ = false;
+    int arpDirection_ = 1;
 };
 
 } // namespace jane60

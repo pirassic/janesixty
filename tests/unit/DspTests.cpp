@@ -317,3 +317,117 @@ TEST_CASE ("every factory patch renders without overload or silence where sound 
         CHECK (peak > 1e-4);
     }
 }
+
+#include "dsp/chorus/ChorusBoard.h"
+
+TEST_CASE ("chorus: off passes dry identically on both channels; I is stereo; I+II is near mono")
+{
+    const double sr = 48000.0;
+    auto run = [&] (ChorusSwitch mode, std::vector<double>& l, std::vector<double>& r)
+    {
+        ChorusBoard c;
+        c.prepare (cal().chorus, sr);
+        c.setMode (mode);
+        l.clear(); r.clear();
+        for (int i = 0; i < 2 * 48000; ++i)
+        {
+            const double x = std::sin (2.0 * 3.14159265358979323846 * 440.0 * i / sr);
+            double a, b;
+            c.process (x, a, b);
+            if (i >= 48000) { l.push_back (a); r.push_back (b); }
+        }
+    };
+    std::vector<double> l, r;
+    run (ChorusSwitch::off, l, r);
+    double diff = 0.0;
+    for (std::size_t i = 0; i < l.size(); ++i) diff = std::max (diff, std::abs (l[i] - r[i]));
+    CHECK (diff < 1e-12);
+
+    auto stereoWidth = [] (const std::vector<double>& a, const std::vector<double>& b)
+    {
+        double side = 0.0, mid = 0.0;
+        for (std::size_t i = 0; i < a.size(); ++i)
+        {
+            side += (a[i] - b[i]) * (a[i] - b[i]);
+            mid += (a[i] + b[i]) * (a[i] + b[i]);
+        }
+        return std::sqrt (side / mid);
+    };
+    run (ChorusSwitch::I, l, r);
+    const double wI = stereoWidth (l, r);
+    run (ChorusSwitch::I_II, l, r);
+    const double wIII = stereoWidth (l, r);
+    CHECK (wI > 0.05);
+    CHECK (wIII < wI * 0.2);
+}
+
+TEST_CASE ("hold: keys stay latched after release, last six remain, pedal release frees them")
+{
+    Synth s;
+    PanelState p;
+    p.sawOn = true; p.vcfFreq = 10.0; p.attack = 0.0; p.decay = 0.0; p.sustain = 10.0; p.release = 0.0;
+    p.hold = true;
+    s.setPanel (p);
+    s.prepare (cal(), 48000.0, 440.0);
+    std::vector<float> l (480), r (480);
+    std::vector<MidiEvent> ev;
+    for (int n = 0; n < 8; ++n) ev.push_back ({ 0, MidiEvent::Type::noteOn, 48 + n, 0.0 });
+    for (int n = 0; n < 8; ++n) ev.push_back ({ 1, MidiEvent::Type::noteOff, 48 + n, 0.0 });
+    s.render (l.data(), r.data(), 480, ev);
+    CHECK (s.activeVoices() == 6);
+    p.hold = false;
+    s.setPanel (p);
+    std::vector<MidiEvent> none;
+    for (int b = 0; b < 20; ++b) s.render (l.data(), r.data(), 480, none);
+    CHECK (s.activeVoices() == 0);
+}
+
+TEST_CASE ("arpeggio: UP over 2 octaves steps through the held chord at the slider rate")
+{
+    Synth s;
+    PanelState p;
+    p.sawOn = true; p.vcfFreq = 10.0; p.attack = 0.0; p.decay = 0.0; p.sustain = 10.0; p.release = 0.0;
+    p.arpOn = true; p.arpMode = ArpMode::up; p.arpRange = 2; p.arpRate = 10.0; // 50 Hz
+    s.setPanel (p);
+    s.prepare (cal(), 48000.0, 440.0);
+    const int n = 48000;
+    std::vector<float> l (n), r (n);
+    std::vector<MidiEvent> ev { { 0, MidiEvent::Type::noteOn, 60, 0.0 }, { 0, MidiEvent::Type::noteOn, 64, 0.0 }, { 0, MidiEvent::Type::noteOn, 67, 0.0 } };
+    s.render (l.data(), r.data(), n, ev);
+    // Count envelope onsets: with A=0 D=0 S=10 R=0 and a 55 % gate at 50 Hz there are ~50 bursts/s.
+    // Envelope follower (1 ms RMS windows), count onsets after a quiet window.
+    int bursts = 0;
+    bool in = false;
+    const int win = 48;
+    for (int i = 0; i + win <= n; i += win)
+    {
+        double e = 0.0;
+        for (int k = 0; k < win; ++k) e += l[i + k] * l[i + k];
+        const bool loud = std::sqrt (e / win) > 1e-3;
+        if (loud && ! in) ++bursts;
+        in = loud;
+    }
+    CHECK (bursts >= 40);
+    CHECK (bursts <= 60);
+    CHECK (s.activeVoices() <= 1);
+}
+
+TEST_CASE ("key transpose shifts pitch upward by the chosen interval")
+{
+    auto freqOf = [] (int keyTranspose)
+    {
+        Synth s;
+        PanelState p;
+        p.sawOn = true; p.vcfFreq = 10.0; p.attack = 0.0; p.decay = 0.0; p.sustain = 10.0; p.release = 0.0;
+        p.keyTranspose = keyTranspose;
+        s.setPanel (p);
+        s.prepare (cal(), 48000.0, 440.0);
+        std::vector<float> l (48000), r (48000);
+        std::vector<MidiEvent> ev { { 0, MidiEvent::Type::noteOn, 69, 0.0 } };
+        s.render (l.data(), r.data(), 48000, ev);
+        std::vector<double> d (l.begin() + 4800, l.end());
+        return zeroCrossingFrequency (d, 48000.0, 0);
+    };
+    CHECK_THAT (freqOf (0), WithinRel (440.0, 0.01));
+    CHECK_THAT (freqOf (7), WithinRel (440.0 * std::exp2 (7.0 / 12.0), 0.01));
+}

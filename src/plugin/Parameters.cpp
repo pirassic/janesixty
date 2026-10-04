@@ -90,6 +90,13 @@ Layout createLayout()
     l.add (slider (volume, "Volume", 8.0f));
     l.add (slider (tune, "Tune", 0.0f, -50.0f, 50.0f));
 
+    l.add (toggle (arpOn, "Arpeggio", false));
+    l.add (choice (arpMode, "Arpeggio Mode", { "UP", "UP & DOWN", "DOWN" }, 0));
+    l.add (choice (arpRange, "Arpeggio Range", { "1", "2", "3" }, 0));
+    l.add (slider (arpRate, "Arpeggio Rate", 5.0f));
+    l.add (toggle (hold, "Hold", false));
+    l.add (choice (keyTranspose, "Key Transpose", { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "C+" }, 0));
+
     return l;
 }
 
@@ -133,6 +140,12 @@ PanelState readPanel (const juce::AudioProcessorValueTreeState& s)
     p.benderVcf = get (s, benderVcf);
     p.volume = get (s, volume);
     p.tune = get (s, tune) / 50.0;
+    p.arpOn = get (s, arpOn) > 0.5f;
+    p.arpMode = static_cast<ArpMode> (getChoice (s, arpMode));
+    p.arpRange = getChoice (s, arpRange) + 1;
+    p.arpRate = get (s, arpRate);
+    p.hold = get (s, hold) > 0.5f;
+    p.keyTranspose = getChoice (s, keyTranspose);
     return p;
 }
 

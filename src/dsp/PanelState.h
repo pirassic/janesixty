@@ -13,6 +13,7 @@ enum class VcaMode { env, gate };
 enum class LfoTrigMode { automatic, manual };
 enum class ChorusSwitch { off, I, II, I_II };
 enum class OctaveTranspose { down, normal, up };
+enum class ArpMode { up, upDown, down };
 
 struct PanelState
 {
@@ -59,6 +60,12 @@ struct PanelState
     OctaveTranspose octave = OctaveTranspose::normal;
 
     // Not stored in a patch
+    bool arpOn = false;
+    ArpMode arpMode = ArpMode::up;
+    int arpRange = 1;         // 1..3 octaves
+    double arpRate = 5.0;     // 0..10, 1.5..50 Hz
+    bool hold = false;        // HOLD button (the pedal is a MIDI event)
+    int keyTranspose = 0;     // 0..12 semitones up (KEY TRANSPOSE)
     double benderDco = 0.0;   // 0..10
     double benderVcf = 0.0;   // 0..10
     double volume = 8.0;      // 0..10

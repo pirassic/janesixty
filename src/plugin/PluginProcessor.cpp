@@ -71,8 +71,9 @@ void Jane60Processor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
         }
         else if (m.isController() && m.getControllerNumber() == 64)
         {
-            // Sustain pedal maps to the hardware HOLD jack in phase 2; ignored for now.
-            continue;
+            // Sustain pedal = the PEDAL HOLD jack.
+            e.type = MidiEvent::Type::holdPedal;
+            e.value = m.getControllerValue() >= 64 ? 1.0 : 0.0;
         }
         else
             continue;

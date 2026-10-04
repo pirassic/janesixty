@@ -17,57 +17,177 @@ void Synth::prepare (const Calibration& cal, double sampleRate, double a4Hz)
     lfo_.configure (cal.lfo, sampleRate);
     noise_.configure (sampleRate, cal.dco.noiseVppAtMax);
     hpf_.configure (cal.hpf, sampleRate);
+    chorus_.prepare (cal.chorus, sampleRate);
     for (auto& v : voices_)
     {
         v.configure (cal, sampleRate);
         v.setPanel (panel_);
     }
     nextVoice_ = 0;
-    heldKeys_ = 0;
+    physical_.clear();
+    latched_.clear();
+    arpPattern_.clear();
+    arpIndex_ = 0;
+    arpPhase_ = 0.0;
+    arpSounding_ = -1;
+    pedal_ = false;
+    lastArpOn_ = panel_.arpOn;
+    lastHold_ = panel_.hold;
+    physical_.reserve (64);
+    latched_.reserve (64);
+    arpPattern_.reserve (64);
 }
 
 int Synth::transposeSemis() const noexcept
 {
+    int t = panel_.keyTranspose;
     switch (panel_.octave)
     {
-        case OctaveTranspose::down: return -12;
-        case OctaveTranspose::up: return 12;
-        default: return 0;
+        case OctaveTranspose::down: t -= 12; break;
+        case OctaveTranspose::up: t += 12; break;
+        default: break;
     }
+    return t;
 }
 
-void Synth::noteOn (int note) noexcept
+// ---------------------------------------------------------------------------
+// Voice level: rotary assignment, the 7th key steals the first (Service Notes p.14).
+// ---------------------------------------------------------------------------
+void Synth::voiceOn (int note) noexcept
 {
-    // Rotary (cyclic) assignment: the next channel in order, the 7th key steals the first.
-    // Service Notes p.14 "Key assignment" and p.22 "UP & DOWN (ROTARY)".
     Voice& v = voices_[static_cast<std::size_t> (nextVoice_)];
     nextVoice_ = (nextVoice_ + 1) % kVoices;
     v.noteOn (note);
-    if (heldKeys_ == 0)
-        lfo_.phraseStart();
-    ++heldKeys_;
 }
 
-void Synth::noteOff (int note) noexcept
+void Synth::voiceOff (int note) noexcept
 {
     for (auto& v : voices_)
         if (v.isGated() && v.note() == note)
             v.noteOff();
-    if (heldKeys_ > 0) --heldKeys_;
+}
+
+// ---------------------------------------------------------------------------
+// Keyboard level: physical keys, HOLD latching, arpeggio pattern.
+// ---------------------------------------------------------------------------
+void Synth::keyDown (int note) noexcept
+{
+    const bool phraseStart = latched_.empty();
+    if (std::find (physical_.begin(), physical_.end(), note) == physical_.end())
+        physical_.push_back (note);
+
+    if (std::find (latched_.begin(), latched_.end(), note) == latched_.end())
+    {
+        latched_.push_back (note);
+        // HOLD keeps the last six keys (Owner's Manual p.20).
+        if (holdActive() && latched_.size() > static_cast<std::size_t> (kVoices))
+        {
+            const int dropped = latched_.front();
+            latched_.erase (latched_.begin());
+            if (! panel_.arpOn) voiceOff (dropped);
+        }
+        if (! panel_.arpOn)
+            voiceOn (note);
+    }
+    if (phraseStart)
+        lfo_.phraseStart();
+    arpDirty_ = true;
+}
+
+void Synth::keyUp (int note) noexcept
+{
+    physical_.erase (std::remove (physical_.begin(), physical_.end(), note), physical_.end());
+    if (holdActive())
+        return; // stays latched
+    latched_.erase (std::remove (latched_.begin(), latched_.end(), note), latched_.end());
+    if (! panel_.arpOn)
+        voiceOff (note);
+    arpDirty_ = true;
+}
+
+void Synth::releaseUnheld() noexcept
+{
+    for (auto it = latched_.begin(); it != latched_.end();)
+    {
+        if (std::find (physical_.begin(), physical_.end(), *it) == physical_.end())
+        {
+            if (! panel_.arpOn) voiceOff (*it);
+            it = latched_.erase (it);
+        }
+        else
+            ++it;
+    }
+    arpDirty_ = true;
+}
+
+void Synth::rebuildArpPattern() noexcept
+{
+    arpPattern_.clear();
+    if (latched_.empty()) return;
+    std::vector<int> base (latched_);
+    std::sort (base.begin(), base.end());
+    base.erase (std::unique (base.begin(), base.end()), base.end());
+
+    // Octaves above the played notes; beyond the keyboard the highest octave repeats
+    // (Owner's Manual p.19).
+    std::vector<int> up;
+    for (int oct = 0; oct < panel_.arpRange; ++oct)
+        for (int n : base)
+        {
+            int m = n + 12 * oct;
+            while (m > 108) m -= 12;
+            up.push_back (m);
+        }
+
+    switch (panel_.arpMode)
+    {
+        case ArpMode::up:
+            arpPattern_ = up;
+            break;
+        case ArpMode::down:
+            arpPattern_.assign (up.rbegin(), up.rend());
+            break;
+        case ArpMode::upDown:
+            arpPattern_ = up;
+            for (std::size_t i = up.size() >= 2 ? up.size() - 2 : 0; i > 0; --i)
+                arpPattern_.push_back (up[i]);
+            break;
+    }
+    if (arpIndex_ >= arpPattern_.size())
+        arpIndex_ = 0;
+}
+
+void Synth::arpTick() noexcept
+{
+    if (arpSounding_ >= 0) { voiceOff (arpSounding_); arpSounding_ = -1; }
+    if (arpPattern_.empty()) return;
+    arpSounding_ = arpPattern_[arpIndex_];
+    voiceOn (arpSounding_);
+    arpIndex_ = (arpIndex_ + 1) % arpPattern_.size();
 }
 
 void Synth::handle (const MidiEvent& e) noexcept
 {
     switch (e.type)
     {
-        case MidiEvent::Type::noteOn: noteOn (e.note); break;
-        case MidiEvent::Type::noteOff: noteOff (e.note); break;
+        case MidiEvent::Type::noteOn: keyDown (e.note); break;
+        case MidiEvent::Type::noteOff: keyUp (e.note); break;
         case MidiEvent::Type::pitchBend: bender_ = e.value; break;
         case MidiEvent::Type::allNotesOff:
             for (auto& v : voices_) v.noteOff();
-            heldKeys_ = 0;
+            physical_.clear();
+            latched_.clear();
+            arpSounding_ = -1;
+            arpDirty_ = true;
             break;
         case MidiEvent::Type::lfoTrig: lfo_.trigButton (e.value > 0.5); break;
+        case MidiEvent::Type::holdPedal:
+        {
+            const bool was = holdActive();
+            pedal_ = e.value > 0.5;
+            if (was && ! holdActive()) releaseUnheld();
+            break;
+        }
     }
 }
 
@@ -76,11 +196,40 @@ void Synth::updateControls() noexcept
     lfo_.setSliders (panel_.lfoRate, panel_.lfoDelay);
     lfo_.setTrigMode (panel_.lfoTrig == LfoTrigMode::automatic ? Lfo::TrigMode::automatic : Lfo::TrigMode::manual);
     hpf_.setPosition (panel_.hpf);
+    chorus_.setMode (panel_.chorus);
     const int semis = transposeSemis();
     for (auto& v : voices_)
     {
         v.setPanel (panel_);
         v.setOctaveOffset (semis);
+    }
+
+    // HOLD button edge: off releases every key not physically held.
+    if (lastHold_ && ! panel_.hold && ! pedal_)
+        releaseUnheld();
+    lastHold_ = panel_.hold;
+
+    // ARPEGGIO switch edge: on takes over the held keys; off re-sounds them as a chord.
+    if (panel_.arpOn != lastArpOn_)
+    {
+        if (panel_.arpOn)
+        {
+            for (int n : latched_) voiceOff (n);
+            arpIndex_ = 0;
+            arpPhase_ = 0.0;
+        }
+        else
+        {
+            if (arpSounding_ >= 0) { voiceOff (arpSounding_); arpSounding_ = -1; }
+            for (int n : latched_) voiceOn (n);
+        }
+        lastArpOn_ = panel_.arpOn;
+        arpDirty_ = true;
+    }
+    if (arpDirty_)
+    {
+        rebuildArpPattern();
+        arpDirty_ = false;
     }
 }
 
@@ -95,17 +244,35 @@ void Synth::render (float* left, float* right, int numSamples, const std::vector
     const double benderVcfVolts = bender_ * (panel_.benderVcf / 10.0) * 5.0;
     const int semis = transposeSemis();
 
+    // Arpeggio clock: 1.5 to 50 Hz over the slider, log taper (assumed).
+    const double arpHz = 1.5 * std::pow (50.0 / 1.5, panel_.arpRate / 10.0);
+    const double arpInc = arpHz / sr_;
+    constexpr double arpGate = 0.55; // step gate fraction (plugin-derived)
+
     std::size_t ev = 0;
     for (int i = 0; i < numSamples; ++i)
     {
         while (ev < events.size() && events[ev].sampleOffset <= i)
+        {
             handle (events[ev++]);
+            if (arpDirty_) { rebuildArpPattern(); arpDirty_ = false; }
+        }
 
-        // Shared modulators
+        if (panel_.arpOn)
+        {
+            if (arpPhase_ == 0.0) arpTick();
+            arpPhase_ += arpInc;
+            if (arpSounding_ >= 0 && arpPhase_ >= arpGate)
+            {
+                voiceOff (arpSounding_);
+                arpSounding_ = -1;
+            }
+            if (arpPhase_ >= 1.0) arpPhase_ = 0.0;
+        }
+
         const double lfo = lfo_.tick();
         const double nz = noise_.tick();
 
-        // Master clock follows bender, LFO and tune every sample (varicap, continuous).
         clock_.update (bender_, benderDepth, lfo, dcoLfoDepth, panel_.tune);
         const double clockHz = clock_.hz();
 
@@ -120,15 +287,13 @@ void Synth::render (float* left, float* right, int numSamples, const std::vector
             sum += v.tick (lfo, nz, benderVcfVolts);
         }
 
-        double out = hpf_.process (sum) * levelGain;
-        // Headroom: voice sum is in volts (4 Vp-p per voice nominal). Scale so one voice at
-        // LEVEL 0 and VOLUME 10 sits near -16 dBFS.
-        out *= 0.08 * volume;
-        const float f = static_cast<float> (out);
-        left[i] = f;
-        if (right != nullptr) right[i] = f;
+        const double pre = hpf_.process (sum) * levelGain;
+        double oL, oR;
+        chorus_.process (pre, oL, oR);
+        const double g = 0.08 * volume;
+        left[i] = static_cast<float> (oL * g);
+        if (right != nullptr) right[i] = static_cast<float> (oR * g);
     }
-    // Any events after the last sample (should not happen) are dropped.
 }
 
 int Synth::activeVoices() const noexcept
