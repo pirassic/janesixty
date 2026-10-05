@@ -24,7 +24,20 @@ Source tags (from `calibration/juno60.json`): `service-notes`, `owners-manual`, 
 ### FREQ slider slope (this step, from the demo recording)
 `VcfMapping::octavesPerSliderUnit` 0.9 -> 1.33, source: the 13.3-octave cutoff span in the Juno-6 and Juno-106 specifications over 10 slider units, anchored at the measured 248 Hz at FREQ 3 (Service Notes 8-2, patch 84 with KYBD 0; KYBD pivot C4 per 8-3, 1 oct/oct per 8-4). Confirmed against the factory demo recording, see research/10. Implied ENV full depth 10.9 octaves (published 10.8 to 11).
 
+### Resonance network result (CI run 37308210767)
+With the BA662 as a differential transconductance and the IR3109 output buffered, the p.9 network as read (R5 47 k into pin 3, R3 100 k into pin 2, R1 / R2 1.5 k, R14 10 k, R7 68 k / R6 560) gives:
+
+| normalised k | 0 | 1 | 2 | 3 | 3.9 |
+|---|---|---|---|---|---|
+| network, passband at 100 Hz (dB) | -1.4 | +3.6 | +4.7 | +5.2 | +5.4 |
+| plugin model, 0.308 compensation (dB) | -0.2 | -3.6 | -5.3 | -6.3 | -6.9 |
+
+Oscillation threshold gm 32.6 mA/V (the resistor arithmetic predicts 31). Self-oscillation at k 4.05 and a 270 Hz corner: 251.9 Hz and 3.52 Vp-p against the plugin's 248.0 Hz and 4.05 Vp-p; the level gap is the BA662's own tanh limiting in the feedback leg, which the plugin does not model.
+
+The passband goes the wrong way: the drawn network gains 6.8 dB with resonance (equivalent coefficient about 2.5), where owners describe resonance thinning the sound and the plugin-derived loss is about 7 dB. R5 = 470 k instead of 47 k would give a coefficient of 0.25 and a loss of 7.9 dB, so the resistor value read from the scan is the prime suspect. `vcf.qCompensation` stays 0.308, plugin-derived, until R5 is confirmed on a more legible scan or the Juno-6 schematic.
+
 ### Open questions carried
+- R5 (compensation leg into BA662 pin 3): 47 k as read, 470 k would reconcile the simulation with the known passband behaviour. Needs a second scan.
 - Resonance network, resolved on a second reading (owner's crop and an external findings note, 2026-10-05): the 47 k compensation leg enters BA662 pin 3 (+) with R2 1.5 k to ground, the 100 k feedback leg enters pin 2 (-) with R1 1.5 k. Input adds, feedback subtracts. The `network` rows in the simulation report now run this differential form on a resonance axis normalised by its own simulated oscillation threshold, so the drawn compensation's passband curve can be read against the plugin's 0.308 coefficient. That coefficient stays `plugin-derived`: the ~7 dB loss it was fitted to has no primary measurement behind it.
 - The external findings note also quotes R4 = 12 k and R7 / R11 = 33 k; the schematic shows R14 10 k and 68 k stage resistors, so its derived 0.37 coefficient is not used.
 - Voice mixer resistor values (saw / pulse / sub / noise legs) still unread; the mixer ratios remain plugin-derived.
