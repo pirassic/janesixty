@@ -361,6 +361,33 @@ TEST_CASE ("chorus: off passes dry identically on both channels; I is stereo; I+
     CHECK (wIII < wI * 0.2);
 }
 
+TEST_CASE ("chorus: the BBD input overloads above the 6 Vp-p bias point while the dry path stays linear")
+{
+    const double sr = 48000.0;
+    // Peak of the wet component (output minus the exactly known dry part) relative to the input peak.
+    auto wetRatio = [&] (ChorusSwitch mode, double peak)
+    {
+        ChorusBoard c;
+        c.prepare (cal().chorus, sr);
+        c.setMode (mode);
+        double wetPeak = 0.0;
+        for (int i = 0; i < 2 * 48000; ++i)
+        {
+            const double x = peak * std::sin (2.0 * 3.14159265358979323846 * 1000.0 * i / sr);
+            double a, b;
+            c.process (x, a, b);
+            if (i >= 48000) wetPeak = std::max (wetPeak, std::abs (a - x * cal().chorus.dryGain));
+        }
+        return wetPeak / peak;
+    };
+    CHECK (wetRatio (ChorusSwitch::off, 8.0) < 1e-9);         // dry only, exactly linear
+    const double quiet = wetRatio (ChorusSwitch::I, 0.5);      // 1 Vp-p
+    const double nominal = wetRatio (ChorusSwitch::I, 2.0);    // 4 Vp-p: below the bias point
+    const double hot = wetRatio (ChorusSwitch::I, 8.0);        // 16 Vp-p: a loud chord at LEVEL +5
+    CHECK_THAT (nominal, WithinRel (quiet, 0.05));
+    CHECK (hot < 0.75 * nominal);
+}
+
 TEST_CASE ("hold: keys stay latched after release, last six remain, pedal release frees them")
 {
     Synth s;

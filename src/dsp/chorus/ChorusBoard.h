@@ -129,6 +129,8 @@ public:
         // a slow on/off; assumed ~150 ms.
         fadeCoef_ = 1.0 - std::exp (-1.0 / (0.15 * sampleRate));
         wetGain_ = std::pow (10.0, c.bbdPathGainDb / 20.0);
+        clipKnee_ = 0.5 * c.bbdClipVpp;
+        clipRoom_ = c.bbdClipRoomV;
         phase_ = 0.0;
         mute_ = 0.0;
         mode_ = ChorusSwitch::off;
@@ -161,7 +163,9 @@ public:
         const double dR = m.stereo ? mid - half * tri : dL;
 
         // Pre-filter (shared), BBD lines, transfer loss vs clock (longer delay = slower clock).
-        double pre = preReal_.process (preB_.process (preA_.process (in)));
+        // The MN3009 input has no compander: the bias trim leaves 6 Vp-p (LEVEL 0) just clean,
+        // so hot patches and big chords overload the wet path while the dry path stays linear.
+        const double pre = bbdInput (preReal_.process (preB_.process (preA_.process (in))));
         const double lossL = 1.0 - 0.08 * (dL - m.delayMinMs) / (m.delayMaxMs - m.delayMinMs + 1e-9);
         const double lossR = 1.0 - 0.08 * (dR - m.delayMinMs) / (m.delayMaxMs - m.delayMinMs + 1e-9);
         double wL = lineL_.process (pre, dL) * lossL;
@@ -184,6 +188,14 @@ private:
         const std::size_t idx = mode_ == ChorusSwitch::I ? 0 : mode_ == ChorusSwitch::II ? 1 : 2;
         return cal_.modes[idx < cal_.modes.size() ? idx : 0];
     }
+    /// Soft overload of the BBD input: linear to the knee, tanh above it.
+    double bbdInput (double x) const noexcept
+    {
+        const double a = std::abs (x);
+        if (a <= clipKnee_) return x;
+        const double y = clipKnee_ + clipRoom_ * std::tanh ((a - clipKnee_) / clipRoom_);
+        return x < 0.0 ? -y : y;
+    }
     double noise() noexcept
     {
         noiseState_ ^= noiseState_ << 13;
@@ -200,6 +212,7 @@ private:
     std::array<Biquad2, 2> postA_ {}, postB_ {};
     std::array<OnePoleLp, 2> postReal_ {};
     double fadeCoef_ = 0.0, mute_ = 0.0, wetGain_ = 1.0, phase_ = 0.0;
+    double clipKnee_ = 3.0, clipRoom_ = 1.5;
     ChorusSwitch mode_ = ChorusSwitch::off;
     unsigned int noiseState_ = 0x2545F491u;
 };

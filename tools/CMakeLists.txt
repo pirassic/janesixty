@@ -1,0 +1,2 @@
+add_executable(jane60_ir3109_dump sim/Ir3109Dump.cpp)
+target_link_libraries(jane60_ir3109_dump PRIVATE jane60_dsp)

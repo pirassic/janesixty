@@ -83,8 +83,10 @@
     "modesSource": "published-measurement pendragon-andyh/Juno60 (service-notes p.7 annotates ~0.5 / 0.8 Hz)",
     "bbdStages":     { "value": 256, "source": "service-notes p.11, p.26 (MN3009)" },
     "bbdPathGainDb": { "value": 2.3, "source": "published-measurement Holters & Parker DAFx-18" },
-    "dryGain":       { "value": 0.83, "source": "assumed: Hera fit; schematic ratio 47k/39k to be simulated" },
-    "wetGain":       { "value": 1.0,  "source": "assumed: Hera fit" }
+    "dryGain":       { "value": 1.0,  "source": "schematic p.11: IC8 summers, dry through R89 / R88 39 k into 100 k feedback (R95 / R91), normalised to 1" },
+    "wetGain":       { "value": 0.83, "source": "schematic p.11: wet through R86 / R87 47 k into the same 100 k feedback: 39 / 47 relative to dry" },
+    "bbdClipVpp":    { "value": 6.0,  "source": "service-notes p.25 chorus adjustment: 6 Vp-p 1 kHz sine at TP8 (chorus board input) with VCA LEVEL approx. 0 and CHORUS I; bias set so TP1 is not clipped" },
+    "bbdClipRoomV":  { "value": 1.5,  "source": "assumed: MN3009 soft overload width above the knee; replace by measurement" }
   },
 
   "voicing": {

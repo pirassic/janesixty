@@ -18,3 +18,7 @@ Changes and reasoning:
 | (side effect) chords clipped after the ENV change | Master gain 0.08 -> 0.045 and a soft safety stage: linear to -1 dBFS, tanh above, never exceeding full scale. A first version with the knee at -3 dBFS was audible on Mellow Piano at LEVEL +3 with chorus off, which the hardware would play clean. | Safety only, not a component. The hardware's overload path is the chorus board (no compander), to be modelled before the chorus in phase 4. |
 
 Open questions for phase 4 (ngspice) or a bench capture: FREQ slider slope, ENV depth law, the chorus board's low-frequency response (the only plausible circuit source for the bass difference), the output-stage clipping level.
+
+## 2026-10-05, after the safety-stage build
+
+Owner: high VCA LEVEL soft-clips; is that consistent with the original? Answer: the stage heard was the plugin's safety limiter, not a component. The original's overload path is the chorus board's BBD input (no compander), pinned by the Service Notes bias procedure at 6 Vp-p (LEVEL 0) at the chorus input. That path is now modelled in its place (wet path only, before the BBD, `chorus.bbdClipVpp`), and the summer gains follow the schematic (wet 0.83 of dry) instead of the Hera fit, which lowers the wet level by about 5.5 dB relative to the previous build. The safety stage stays at -1 dBFS.

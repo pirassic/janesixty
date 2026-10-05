@@ -118,9 +118,11 @@ struct Calibration
     {
         std::vector<ChorusMode> modes;
         int bbdStages = 256;
-        double bbdPathGainDb = 2.3;          ///< Holters & Parker measurement
-        double dryGain = 0.83;
-        double wetGain = 1.0;
+        double bbdPathGainDb = 2.3;          ///< Holters & Parker measurement (BBD path before the summer)
+        double dryGain = 1.0;                ///< summer: 100 k feedback / 39 k dry, normalised to 1
+        double wetGain = 0.83;               ///< summer: 100 k / 47 k wet, relative to dry
+        double bbdClipVpp = 6.0;             ///< chorus input level (LEVEL 0) at which the BBD just does not clip
+        double bbdClipRoomV = 1.5;           ///< soft region above the knee (assumed)
     } chorus;
 
     /// Output voicing that has no circuit source yet. Provisional: fitted by ear against

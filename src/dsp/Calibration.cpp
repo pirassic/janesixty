@@ -198,6 +198,8 @@ Calibration Calibration::fromJson (std::string_view jsonText)
     c.chorus.bbdPathGainDb = r.number ("chorus.bbdPathGainDb");
     c.chorus.dryGain       = r.number ("chorus.dryGain");
     c.chorus.wetGain       = r.number ("chorus.wetGain");
+    c.chorus.bbdClipVpp    = r.number ("chorus.bbdClipVpp");
+    c.chorus.bbdClipRoomV  = r.number ("chorus.bbdClipRoomV");
 
     if (root.contains ("voicing"))
     {

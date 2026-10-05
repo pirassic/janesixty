@@ -22,6 +22,33 @@ jobs:
       - name: Test
         run: ctest --test-dir build --output-on-failure
 
+  sim-reference:
+    name: Reference simulation (ngspice) vs plugin blocks
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ngspice and numpy
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q ngspice python3-numpy
+          ngspice --version | head -2
+      - name: Build the block dump tool
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DJANE60_BUILD_PLUGIN=OFF -DJANE60_BUILD_TESTS=OFF
+          cmake --build build --target jane60_ir3109_dump
+      - name: Run the reference and the plugin block
+        run: |
+          mkdir -p sim/ref sim/dsp
+          python3 tools/sim/ir3109_ref.py --out sim/ref
+          ./build/tools/jane60_ir3109_dump calibration/juno60.json sim/dsp
+      - name: Compare
+        run: python3 tools/sim/compare.py --ref sim/ref --dsp sim/dsp --out sim/ir3109-report.md
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sim-reference-report
+          path: sim/
+          retention-days: 30
+
   plugin-macos:
     name: Plugin (macOS universal, AU + VST3 + Standalone)
     runs-on: macos-15

@@ -21,6 +21,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 option(JANE60_BUILD_PLUGIN "Build the JUCE plugin and standalone targets" ON)
 option(JANE60_BUILD_TESTS  "Build unit tests" ON)
+option(JANE60_BUILD_TOOLS  "Build the calibration / simulation comparison tools" ON)
 
 include(FetchContent)
 
@@ -119,4 +120,8 @@ endif()
 if(JANE60_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+if(JANE60_BUILD_TOOLS)
+    add_subdirectory(tools)
 endif()
