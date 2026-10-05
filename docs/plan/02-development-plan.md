@@ -153,11 +153,13 @@ Rotary assignment, steal the oldest voice; non-rotary and unison as hidden modes
 - Listening sessions on the 56 factory patches against Roland's and TAL's plugins as a sanity check (not a target); iterate on the blocks that miss.
 - Exit: `docs/calibration-report.md` lists every constant with its source and every assumed value with its uncertainty, and the README's fidelity statement matches it.
 
-### Phase 5: extras (weeks 13 to 15)
+### Phase 5: extras and Windows (weeks 13 to 15)
 - Velocity and MPE toggles and routing; preset badge; tests that the extras-off path is bit-identical to phase 4 output.
-- Exit: both extras work in Logic (MPE via a Seaboard-type controller or Logic's MPE test) and Cubase.
+- Windows Standalone and VST3 (x64, MSVC, `windows-latest` CI job with pluginval and a zip artifact); Windows preset folder; no AU or AAX.
+- Exit: both extras work in Logic (MPE via a Seaboard-type controller or Logic's MPE test) and Cubase; the Windows VST3 passes pluginval and loads in Cubase on Windows.
 
 ### Phase 6: release engineering (weeks 15 to 18)
+- **Windows installer:** Inno Setup or WiX, VST3 to `C:\Program Files\Common Files\VST3`, standalone to Program Files, code signing when a certificate exists.
 - **Mac installer:** a signed and notarized `.pkg` built in CI (pkgbuild + productbuild) that installs the AU to `/Library/Audio/Plug-Ins/Components`, the VST3 to `/Library/Audio/Plug-Ins/VST3` and the standalone app to `/Applications`, with per-component choices, a welcome and licence pane, the factory preset bank, and an uninstall script. Also a plain zip and a Homebrew cask in the project's own tap. Universal binary, macOS 11 minimum.
 - Apple Developer ID Application and Installer certificates ($99/yr programme), hardened runtime, timestamped signatures, notarytool submission and stapling, all from CI secrets.
 - pluginval level 10 nightly, RADSan run, performance budget: six voices with chorus under 5 % of one Apple M1 core at 48 kHz / 128 samples.
