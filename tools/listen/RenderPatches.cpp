@@ -73,10 +73,11 @@ int main (int argc, char** argv)
             s.render (l.data(), r.data(), block, ev);
             for (int i = 0; i < block; ++i) { inter.push_back (l[static_cast<std::size_t> (i)]); inter.push_back (r[static_cast<std::size_t> (i)]); }
         }
-        char name[64];
-        std::snprintf (name, sizeof name, "%s/patch_%02d.f32", out.c_str(), fp.number);
-        FILE* f = std::fopen (name, "wb");
-        if (f == nullptr) { std::perror (name); return 1; }
+        char num[16];
+        std::snprintf (num, sizeof num, "%02d", fp.number);
+        const std::string name = out + "/patch_" + num + ".f32";
+        FILE* f = std::fopen (name.c_str(), "wb");
+        if (f == nullptr) { std::perror (name.c_str()); return 1; }
         std::fwrite (inter.data(), sizeof (float), inter.size(), f);
         std::fclose (f);
     }
