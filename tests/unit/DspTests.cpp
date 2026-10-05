@@ -537,3 +537,65 @@ TEST_CASE ("condition layer: the VCF trim choice moves self-oscillation by the c
     pr.panel = p;
     CHECK (presetToJson (pr).find ("trim") == std::string::npos);
 }
+
+TEST_CASE ("condition layer: drive changes only the filter's saturation, spread makes voices differ, chorus noise can be muted")
+{
+    // Drive: a small signal passes with the same gain whatever the drive; a full-level saw gains harmonics.
+    const double sr = 48000.0;
+    auto response = [&] (double driveDb, double amplitudeV)
+    {
+        Ir3109 f;
+        f.configure (cal().vcf, sr);
+        f.set (200.0, 0.0); // at the corner the stage inputs see x - y of the full swing
+        f.setDrive (std::pow (10.0, driveDb / 20.0));
+        std::vector<double> y;
+        for (int i = 0; i < 48000; ++i)
+            y.push_back (f.process (amplitudeV * std::sin (2.0 * 3.14159265358979323846 * 200.0 * i / sr)));
+        double mx = 0.0;
+        for (std::size_t i = 24000; i < y.size(); ++i) mx = std::max (mx, std::abs (y[i]));
+        return mx;
+    };
+    CHECK_THAT (response (6.0, 0.05) / response (-6.0, 0.05), WithinRel (1.0, 0.01));   // linear region: no level change
+    CHECK (response (6.0, 6.0) / response (-6.0, 6.0) < 0.97);                           // 12 Vp-p: more compression at +6 dB
+
+    // Spread: two voices on the same note differ in level and cutoff under the tolerances, not at spread 0.
+    PanelState p;
+    p.sawOn = true; p.vcfFreq = 5.0; p.attack = 0.0; p.decay = 0.0; p.sustain = 10.0; p.release = 0.0;
+    auto voicePeak = [&] (std::size_t index, double spread)
+    {
+        Voice v;
+        v.configure (cal(), sr);
+        v.setPanel (p);
+        const Condition::Tolerances tol;
+        const auto& u = Condition::pattern[index];
+        VoiceDeviation d;
+        d.sawScale = 1.0 + spread * tol.sawAmplitude * u[0];
+        d.vcaScale = std::pow (10.0, spread * tol.vcaDb * u[4] / 20.0);
+        v.setDeviation (d);
+        PitchTable pt;
+        pt.configure (cal().clock.masterClockHz, cal().clock.tuningA4Hz);
+        v.setPitch (pt.divisor[60], cal().clock.masterClockHz, cal().dco.sawVpp);
+        v.noteOn (60);
+        double mx = 0.0;
+        for (int i = 0; i < 9600; ++i) mx = std::max (mx, std::abs (v.tick (0.0, 0.0, 0.0)));
+        return mx;
+    };
+    CHECK_THAT (voicePeak (0, 0.0), WithinRel (voicePeak (1, 0.0), 1e-9));
+    CHECK (std::abs (voicePeak (0, 1.0) / voicePeak (1, 1.0) - 1.0) > 0.05);
+
+    // Chorus noise: with no input the wet path carries only the hiss; the condition can mute it.
+    auto hiss = [&] (double gain)
+    {
+        ChorusBoard c;
+        c.prepare (cal().chorus, sr);
+        c.setMode (ChorusSwitch::I);
+        c.setNoiseGain (gain);
+        double l, r, acc = 0.0;
+        for (int i = 0; i < 48000; ++i) { c.process (0.0, l, r); if (i > 24000) acc += l * l; }
+        return std::sqrt (acc / 24000.0);
+    };
+    CHECK (hiss (1.0) > 1e-6);
+    CHECK (hiss (0.0) == 0.0);
+    // The key is the hiss at the BBD; the post filters and the wet gain take a few dB off by the output.
+    CHECK_THAT (20.0 * std::log10 (hiss (1.0) / 1.4142), WithinAbs (cal().chorus.noiseDbRe4Vpp, 6.0));
+}

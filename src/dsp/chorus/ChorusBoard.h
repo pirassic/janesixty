@@ -127,6 +127,8 @@ public:
         // a slow on/off; assumed ~150 ms.
         fadeCoef_ = 1.0 - std::exp (-1.0 / (0.15 * sampleRate));
         wetGain_ = std::pow (10.0, c.bbdPathGainDb / 20.0);
+        // Hiss: uniform noise (rms 1/sqrt 12) scaled to noiseDbRe4Vpp relative to a 4 Vp-p sine (1.414 V rms).
+        noiseAmp_ = 1.4142 * std::pow (10.0, c.noiseDbRe4Vpp / 20.0) * std::sqrt (12.0);
         clipKnee_ = 0.5 * c.bbdClipVpp;
         clipRoom_ = c.bbdClipRoomV;
         phase_ = 0.0;
@@ -136,6 +138,9 @@ public:
     }
 
     void setMode (ChorusSwitch m) noexcept { mode_ = m; }
+
+    /// Condition layer: hiss relative to the calibrated level (0 mutes it).
+    void setNoiseGain (double linearGain) noexcept { noiseGain_ = linearGain; }
 
     /// Mono input (volts), stereo output.
     void process (double in, double& outL, double& outR) noexcept
@@ -169,9 +174,10 @@ public:
         double wL = lineL_.process (pre, dL) * lossL;
         double wR = lineR_.process (pre, dR) * lossR;
 
-        // No compander: a constant hiss from the BBDs (assumed -72 dB re 4 Vp-p).
-        wL += noise() * 3e-4;
-        wR += noise() * 3e-4;
+        // No compander: a constant hiss from the BBDs (calibration chorus.noiseDbRe4Vpp, assumed).
+        const double hiss = noiseAmp_ * noiseGain_;
+        wL += noise() * hiss;
+        wR += noise() * hiss;
 
         // Post filters, wet gain, mute fade, summers.
         wL = postReal_[0].process (postB_[0].process (postA_[0].process (wL))) * wetGain_ * mute_;
@@ -210,6 +216,7 @@ private:
     std::array<Biquad2, 2> postA_ {}, postB_ {};
     std::array<OnePoleLp, 2> postReal_ {};
     double fadeCoef_ = 0.0, mute_ = 0.0, wetGain_ = 1.0, phase_ = 0.0;
+    double noiseAmp_ = 0.0, noiseGain_ = 1.0;
     double clipKnee_ = 3.0, clipRoom_ = 1.5;
     ChorusSwitch mode_ = ChorusSwitch::off;
     unsigned int noiseState_ = 0x2545F491u;

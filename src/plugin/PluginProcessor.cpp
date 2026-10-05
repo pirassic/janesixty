@@ -41,11 +41,19 @@ void Jane60Processor::prepareToPlay (double sampleRate, int)
 
 void Jane60Processor::applyCondition (bool force) noexcept
 {
-    const bool demo = demoTrim_.load();
-    if (! force && demo == appliedDemoTrim_)
+    Condition c = demoTrim_.load() ? Condition::demoUnit (calibration_) : Condition::serviceNotes();
+    c.voiceSpread = voiceSpread_.load();
+    c.vcfDriveDb = vcfDriveDb_.load();
+    const double noiseDb = chorusNoiseDb_.load();
+    c.chorusNoise = noiseDb > -90.0;
+    c.chorusNoiseDb = c.chorusNoise ? noiseDb : 0.0;
+    if (! force && conditionApplied_
+        && c.vcfTrimOffsetOct == applied_.vcfTrimOffsetOct && c.voiceSpread == applied_.voiceSpread
+        && c.vcfDriveDb == applied_.vcfDriveDb && c.chorusNoise == applied_.chorusNoise && c.chorusNoiseDb == applied_.chorusNoiseDb)
         return;
-    appliedDemoTrim_ = demo;
-    synth_.setCondition (demo ? Condition::demoUnit (calibration_) : Condition::serviceNotes());
+    applied_ = c;
+    conditionApplied_ = true;
+    synth_.setCondition (c);
 }
 
 bool Jane60Processor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -139,6 +147,9 @@ void Jane60Processor::getStateInformation (juce::MemoryBlock& destData)
     auto state = apvts_.copyState();
     state.setProperty ("program", currentProgram_, nullptr);
     state.setProperty ("demoTrim", demoTrim_.load(), nullptr);
+    state.setProperty ("voiceSpread", voiceSpread_.load(), nullptr);
+    state.setProperty ("vcfDriveDb", vcfDriveDb_.load(), nullptr);
+    state.setProperty ("chorusNoiseDb", chorusNoiseDb_.load(), nullptr);
     presets_.writeTo (state);
     if (auto xml = state.createXml())
         copyXmlToBinary (*xml, destData);
@@ -153,6 +164,9 @@ void Jane60Processor::setStateInformation (const void* data, int sizeInBytes)
             auto tree = juce::ValueTree::fromXml (*xml);
             currentProgram_ = static_cast<int> (tree.getProperty ("program", 0));
             demoTrim_.store (static_cast<bool> (tree.getProperty ("demoTrim", true)));
+            voiceSpread_.store (static_cast<double> (tree.getProperty ("voiceSpread", 1.0)));
+            vcfDriveDb_.store (static_cast<double> (tree.getProperty ("vcfDriveDb", 0.0)));
+            chorusNoiseDb_.store (static_cast<double> (tree.getProperty ("chorusNoiseDb", 0.0)));
             apvts_.replaceState (tree);
             presets_.readFrom (tree);
         }

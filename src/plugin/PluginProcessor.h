@@ -55,6 +55,13 @@ public:
     // Service Notes trim. Default on, so the factory bank sounds like the demo recording.
     void setDemoTrim (bool on) noexcept { demoTrim_.store (on); }
     [[nodiscard]] bool demoTrim() const noexcept { return demoTrim_.load(); }
+    void setVoiceSpread (double s) noexcept { voiceSpread_.store (s); }
+    [[nodiscard]] double voiceSpread() const noexcept { return voiceSpread_.load(); }
+    void setVcfDriveDb (double db) noexcept { vcfDriveDb_.store (db); }
+    [[nodiscard]] double vcfDriveDb() const noexcept { return vcfDriveDb_.load(); }
+    void setChorusNoiseDb (double db) noexcept { chorusNoiseDb_.store (db); } // below -90 = off
+    [[nodiscard]] double chorusNoiseDb() const noexcept { return chorusNoiseDb_.load(); }
+    static constexpr double kChorusNoiseOff = -100.0;
 
     // Panel controls that are MIDI-like events rather than parameters.
     void setUiBender (double minusOneToOne) noexcept { uiBender_.store (minusOneToOne); uiBenderDirty_.store (true); }
@@ -78,7 +85,11 @@ private:
     std::vector<MidiEvent> events_;
     int currentProgram_ = 0;
     std::atomic<bool> demoTrim_ { true };
-    bool appliedDemoTrim_ = true;
+    std::atomic<double> voiceSpread_ { 1.0 };     // a serviced unit has its tolerances
+    std::atomic<double> vcfDriveDb_ { 0.0 };
+    std::atomic<double> chorusNoiseDb_ { 0.0 };
+    Condition applied_;
+    bool conditionApplied_ = false;
 
     void applyCondition (bool force) noexcept;
 

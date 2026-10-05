@@ -4,6 +4,7 @@
 #pragma once
 
 #include "dsp/Calibration.h"
+#include "dsp/Condition.h"
 #include "dsp/PanelState.h"
 #include "dsp/dco/Dco.h"
 #include "dsp/env/Ir3r01Envelope.h"
@@ -66,6 +67,14 @@ public:
         setTrimOffsetOct (cal.vcf.trimOffsetOct); // the demo unit's trim until the condition layer says otherwise
     }
 
+    /// Condition layer: this voice's tolerances and the filter drive.
+    void setDeviation (const VoiceDeviation& d) noexcept
+    {
+        dev_ = d;
+        env_.setTimeScale (d.envTimeScale);
+    }
+    void setDrive (double linearGain) noexcept { vcf_.setDrive (linearGain); }
+
     /// Unit trim (condition layer), octaves relative to the Service Notes 248 Hz point.
     void setTrimOffsetOct (double oct) noexcept
     {
@@ -108,7 +117,7 @@ public:
     void setPitch (long divisor, double clockHz, double ampVpp) noexcept
     {
         dco_.setPitch (divisor, clockHz);
-        dco_.setAmplitudeVpp (ampVpp);
+        dco_.setAmplitudeVpp (ampVpp * dev_.sawScale);
     }
 
     /// Render one sample. lfo: -1..1 (delay-scaled), noise: volts, benderVcf: -1..1 scaled by sens.
@@ -142,7 +151,7 @@ public:
 
         // Cutoff CV: FREQ + ENV*depth*polarity + LFO*depth + KYBD + pedal + bender
         const Calibration::Vcf& v = cal_->vcf;
-        double oct = (p.vcfFreq - v.anchorSliderPos) * map_.octavesPerSliderUnit + trimOffsetOct_;
+        double oct = (p.vcfFreq - v.anchorSliderPos) * map_.octavesPerSliderUnit + trimOffsetOct_ + dev_.cutoffOct;
         const double envDepth = VcfMapping::cvDepth (p.vcfEnv) * envFullDepthOct_;
         oct += (p.vcfPolarity == VcfPolarity::normal ? 1.0 : -1.0) * envDepth * env;
         oct += VcfMapping::cvDepth (p.vcfLfo) * v.lfoFullDepthOct * lfo;
@@ -154,6 +163,7 @@ public:
         // Resonance
         double k = (p.vcfRes / map_.selfOscSliderPos) * 4.0;
         if (k > map_.kMax) k = map_.kMax;
+        k *= dev_.resonanceScale;
         const double kn = k / map_.kMax;
         const double corner = cutoff * (1.0 + (map_.selfOscShift - 1.0) * kn * kn);
         vcf_.set (corner, k);
@@ -171,7 +181,7 @@ public:
             active_ = false;
 
         // Scale: 12 Vp-p saw through the filter gives 4 Vp-p at the VCA output (Service Notes adj. 5-1)
-        return filtered * gain * (cal_->vca.voiceOutVpp / cal_->dco.sawVpp);
+        return filtered * gain * dev_.vcaScale * (cal_->vca.voiceOutVpp / cal_->dco.sawVpp);
     }
 
     void setOctaveOffset (int semis) noexcept { octaveOffset_ = semis; }
@@ -194,6 +204,7 @@ private:
     VcfMapping map_;
     double envFullDepthOct_ = 10.0;
     double trimOffsetOct_ = 0.0;
+    VoiceDeviation dev_;
     double manualDuty_ = 0.5;
     int note_ = 60;
     int octaveOffset_ = 0;

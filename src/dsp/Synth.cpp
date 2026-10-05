@@ -50,8 +50,22 @@ void Synth::setCondition (const Condition& c) noexcept
 {
     condition_ = c;
     if (cal_ == nullptr) return;
-    for (auto& v : voices_)
-        v.setTrimOffsetOct (c.vcfTrimOffsetOct);
+    const Condition::Tolerances tol;
+    const double drive = std::pow (10.0, c.vcfDriveDb / 20.0);
+    for (std::size_t i = 0; i < voices_.size(); ++i)
+    {
+        const auto& u = Condition::pattern[i];
+        VoiceDeviation d;
+        d.sawScale = 1.0 + c.voiceSpread * tol.sawAmplitude * u[0];
+        d.cutoffOct = c.voiceSpread * tol.cutoffOct * u[1];
+        d.resonanceScale = 1.0 + c.voiceSpread * tol.resonance * u[2];
+        d.envTimeScale = 1.0 + c.voiceSpread * tol.envTime * u[3];
+        d.vcaScale = std::pow (10.0, c.voiceSpread * tol.vcaDb * u[4] / 20.0);
+        voices_[i].setTrimOffsetOct (c.vcfTrimOffsetOct);
+        voices_[i].setDeviation (d);
+        voices_[i].setDrive (drive);
+    }
+    chorus_.setNoiseGain (c.chorusNoise ? std::pow (10.0, c.chorusNoiseDb / 20.0) : 0.0);
 }
 
 int Synth::transposeSemis() const noexcept

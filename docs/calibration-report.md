@@ -56,6 +56,19 @@ The hardware loses passband with resonance about as the 0.308 model does (the la
 - The external findings note also quotes R4 = 12 k and R7 / R11 = 33 k; the schematic shows R14 10 k and 68 k stage resistors, so its derived 0.37 coefficient is not used.
 - Voice mixer resistor values (saw / pulse / sub / noise legs) still unread; the mixer ratios remain plugin-derived.
 
+## Condition layer (phase 4 close, 2026-10-05)
+The user-facing settings that the overview promised for the audible uncertainties (`docs/user/settings.md`), each with the evidence behind its default:
+- **VCF trim**: demo unit (+1.0 oct) or Service Notes (0). Evidence in the trim offset section above.
+- **Filter drive**: the model's level into the OTA pairs is 12 Vp-p through 68 k / 560 R, +-0.94 of 2 Vt at the saw's peaks. The p.9 mixer reading (research/05) suggests the saw is divided by R37 / R23 before R14 and the 68 k, which would put the real level 8 to 9 dB lower, but the legs are not legible. Test against the demo recording: the ten saw-led patches rendered at -8 dB drive move the high band by +1 dB and the tilt by +0.3 dB/oct, inside the method's noise, so the recording cannot pin it. Default kept at the schematic reading; -6 / +6 dB offered.
+- **Voice spread**: per-voice deviations with fixed signs (`Condition::pattern`) scaled by the tolerances in `Condition::Tolerances`: saw +-1/12 (Service Notes p.23, 12 Vp-p +-1 V), cutoff +-0.03 oct and resonance +-2 % (assumed trim residuals), envelope time +-8 % and VCA +-0.5 dB (KR-106 practical figures, research/03). Default on at 1x: a serviced unit has them. Off and 2x offered. The render tools run at 0 so comparisons stay deterministic.
+- **Chorus noise**: `chorus.noiseDbRe4Vpp` -84 dB (assumed; the level the plugin has carried since phase 2, now a key), off and +10 dB offered.
+
+### Self-oscillation start time
+On a silent patch the model's self-oscillation grows from the mixer's -100 dB noise bleed at about 33 dB/s and takes 3 s to reach 4 Vp-p. The ngspice `network` run (the drawn BA662 with its tanh limit and the 47 k / 100 k dividers) oscillates at 3.5 Vp-p when its small-signal gain is 1.25 % above threshold, the same margin as the model's kMax 4.05: both limiters are mild at 4 Vp-p, so a unit trimmed to the Service Notes' 4 Vp-p also sits just above threshold and also builds up slowly from its own noise. The real seed (OTA and mixer noise, saw switch leakage) is probably nearer -80 dB than -100, which would shorten the start to about 2 s. Left as is; a bench capture of patch 84's onset would settle it.
+
+### BA662 input weighting (open, research only)
+The drawn network with an ideal BA662 (divider 1.5 / 48.5 = 0.0309 into pin 3, 1.5 / 101.5 = 0.0148 into pin 2) makes the compensation 2.1 times the feedback and raises the passband by 5.4 dB at full resonance (sim `passband.csv`, network rows); the recording's loudness balance across the bank wants the model's 0.308, a 7 dB loss. The compensation leg therefore acts about seven times (17 dB) weaker than the ideal divider predicts. Candidates: the BA662's input stage has internal bias or degeneration resistance on the (+) input only (the part is an OTA plus buffer with Wilson mirrors per the reverse engineering at Open Music Labs; its input network is not in any document this session could reach), or the faint R5 trace terminates elsewhere than pin 3. A bench measurement of passband level vs RES on one unit, or the Open Music Labs internal diagram read for an input resistor, closes it. Until then 0.308 stays `plugin-derived`, confirmed by the recording within 2 dB.
+
 ## Assumed values (phase 4 exit list, 2026-10-05)
 Every entry in `calibration/juno60.json` whose source starts with `assumed` (`Calibration::assumedKeys()`), with its uncertainty and what it touches. vcf.qCompensation, chorus.dryGain and chorus.wetGain were assumed earlier and now carry schematic sources.
 
@@ -66,6 +79,7 @@ Every entry in `calibration/juno60.json` whose source starts with `assumed` (`Ca
 | `chorus.bbdClipVpp` (knee; source is a test condition, not `assumed`) and `chorus.bbdClipRoomV` | 6 Vp-p, 1.5 V | knee +-1.5 V, room +-1 V | overload shape of the wet path on six-voice chords above LEVEL +3; silent below (chords sit 10 dB under the knee at LEVEL 0) | MN3009 input THD sweep at the bias point, or Holters & Parker's measured curve |
 | `voicing.lowShelfDb` | +1.0 dB | +-1.5 dB (the recording's sub band agrees within the method's noise with it in, listening notes 2026-10-05) | low end 150 Hz down | none from the demo; a line recording of a known unit, or zero it as a user voicing |
 | `voicing.lowShelfHz` | 150 Hz | +-50 Hz | as above | as above |
+| `chorus.noiseDbRe4Vpp` | -84 dB | +-10 dB (unit and age dependent) | chorus hiss floor | user setting (chorus noise); a silent-input capture of one unit's chorus output |
 
 Assumptions that live in code rather than the file (comments say `assumed`), none pinned by a source:
 

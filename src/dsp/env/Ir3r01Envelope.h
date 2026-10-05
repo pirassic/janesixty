@@ -28,11 +28,19 @@ public:
     /// Slider positions 0..10 (already quantised by the caller if desired).
     void setSliders (double a, double d, double s, double r) noexcept
     {
-        attackT_ = cal_.attackSeconds.at (a);
-        decayT_ = cal_.decaySeconds.at (d);
-        releaseT_ = cal_.releaseSeconds.at (r);
+        sliders_[0] = a; sliders_[1] = d; sliders_[2] = s; sliders_[3] = r;
+        attackT_ = cal_.attackSeconds.at (a) * timeScale_;
+        decayT_ = cal_.decaySeconds.at (d) * timeScale_;
+        releaseT_ = cal_.releaseSeconds.at (r) * timeScale_;
         sustain_ = cal_.sustainLevel.at (s);
         recompute();
+    }
+
+    /// Condition layer: per-voice time tolerance (the IR3R01's timing capacitor and trim).
+    void setTimeScale (double scale) noexcept
+    {
+        timeScale_ = scale;
+        setSliders (sliders_[0], sliders_[1], sliders_[2], sliders_[3]);
     }
 
     void gate (bool on) noexcept
@@ -107,6 +115,8 @@ private:
     Calibration::Env cal_ {};
     double sr_ = 48000.0;
     double attackT_ = 0.001, decayT_ = 0.002, releaseT_ = 0.002, sustain_ = 1.0;
+    double timeScale_ = 1.0;
+    double sliders_[4] { 0.0, 0.0, 10.0, 0.0 };
     double target_ = 1.58;
     double attackCoef_ = 0.0, decayCoef_ = 0.0, releaseCoef_ = 0.0;
     double level_ = 0.0;

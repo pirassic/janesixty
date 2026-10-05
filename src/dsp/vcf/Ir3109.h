@@ -63,6 +63,10 @@ public:
 
     [[nodiscard]] double feedbackGain() const noexcept { return k_; }
 
+    /// Condition layer: linear gain on the signal into the OTA pairs, undone at the output,
+    /// so only the tanh saturation changes (research/01: the exact drive is not pinned).
+    void setDrive (double linearGain) noexcept { drive_ = linearGain > 1e-3 ? linearGain : 1e-3; }
+
 private:
     // Solve y = s + g tanh(x - y) for y by Newton's method.
     static double solveStage (double x, double s, double g) noexcept
@@ -82,7 +86,7 @@ private:
     double tickInternal (double inVolts) noexcept
     {
         constexpr double vt2 = 2.0 * 0.026;
-        const double xin = inVolts * attenuation_ / vt2;
+        const double xin = inVolts * attenuation_ * drive_ / vt2;
         const double comp = 1.0 + cal_.qCompensation * k_;
 
         double y4 = y4_;
@@ -100,7 +104,7 @@ private:
         for (int i = 0; i < 4; ++i)
             s_[i] = 2.0 * y[i] - s_[i];
         y4_ = y4;
-        return y4 * vt2 / attenuation_;
+        return y4 * vt2 / (attenuation_ * drive_);
     }
 
     Calibration::Vcf cal_ {};
@@ -109,6 +113,7 @@ private:
     double attenuation_ = 560.0 / 68560.0;
     double g_ = 0.0;
     double k_ = 0.0;
+    double drive_ = 1.0;
     double s_[4] {};
     double y4_ = 0.0;
 };

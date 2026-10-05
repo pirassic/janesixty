@@ -160,6 +160,30 @@ void Jane60Editor::showSettingsMenu (juce::Component* target, juce::StandaloneFi
     juce::PopupMenu m;
     m.addSectionHeader ("Unit");
     m.addItem (100, "Match the factory demo unit (VCF trim one octave above the Service Notes)", true, processor_.demoTrim());
+    {
+        const double s = processor_.voiceSpread();
+        juce::PopupMenu sub;
+        sub.addItem (110, "Off: six identical voices", true, s == 0.0);
+        sub.addItem (111, "Service Notes tolerances", true, s == 1.0);
+        sub.addItem (112, "Twice the tolerances (worn unit)", true, s == 2.0);
+        m.addSubMenu ("Voice spread", sub);
+    }
+    {
+        const double d = processor_.vcfDriveDb();
+        juce::PopupMenu sub;
+        sub.addItem (120, "-6 dB: cleaner filter", true, d == -6.0);
+        sub.addItem (121, "As calibrated (schematic reading)", true, d == 0.0);
+        sub.addItem (122, "+6 dB: more filter growl", true, d == 6.0);
+        m.addSubMenu ("Filter drive", sub);
+    }
+    {
+        const double n = processor_.chorusNoiseDb();
+        juce::PopupMenu sub;
+        sub.addItem (130, "Off", true, n <= -90.0);
+        sub.addItem (131, "As calibrated", true, n == 0.0);
+        sub.addItem (132, "Aged BBDs (+10 dB)", true, n == 10.0);
+        m.addSubMenu ("Chorus noise", sub);
+    }
     if (window != nullptr)
     {
         m.addSeparator();
@@ -175,9 +199,22 @@ void Jane60Editor::showSettingsMenu (juce::Component* target, juce::StandaloneFi
     {
         if (self == nullptr || result == 0)
             return;
-        if (result == 100)
-            self->processor_.setDemoTrim (! self->processor_.demoTrim());
-        else if (window != nullptr)
+        auto& p = self->processor_;
+        switch (result)
+        {
+            case 100: p.setDemoTrim (! p.demoTrim()); return;
+            case 110: p.setVoiceSpread (0.0); return;
+            case 111: p.setVoiceSpread (1.0); return;
+            case 112: p.setVoiceSpread (2.0); return;
+            case 120: p.setVcfDriveDb (-6.0); return;
+            case 121: p.setVcfDriveDb (0.0); return;
+            case 122: p.setVcfDriveDb (6.0); return;
+            case 130: p.setChorusNoiseDb (Jane60Processor::kChorusNoiseOff); return;
+            case 131: p.setChorusNoiseDb (0.0); return;
+            case 132: p.setChorusNoiseDb (10.0); return;
+            default: break;
+        }
+        if (window != nullptr)
             window->handleMenuResult (result); // 4 deletes and re-creates the plugin, this editor included
     });
 }

@@ -11,7 +11,7 @@ Read this first in a new session. It states where the project is, what is settle
 ## Where the build stands
 - Formats: AU, VST3, Standalone, macOS universal (arm64 + x86_64, 11.0+), ad-hoc signed in CI. Artifact `jane60-macos-unsigned` on every green run; install with `xattr -dr com.apple.quarantine`.
 - CI jobs: `dsp-tests-linux` (26 Catch2 tests, DSP library only), `plugin-macos` (build, tests, auval, pluginval level 5, artifact), `sim-reference` (ngspice IR3109 reference vs the plugin block, report artifact `sim-reference-report`).
-- Phases 0 to 3 done (research, DSP, presets, panel UI). Phase 4 (calibration) in progress and far along. Phases 5 to 7 not started.
+- Phases 0 to 4 done (research, DSP, presets, panel UI, calibration). Phases 5 to 7 not started.
 
 ## Sound model, current state and provenance
 All constants are in `calibration/juno60.json` with a source tag each. Settled this session, in audible order:
@@ -35,18 +35,18 @@ Measured against the demo recording (tools below), mean over 56 patches, plugin 
 1. ~~Sub band~~ closed 2026-10-05: the 6 dB was the demo's left-hand bass line missing from the render phrase, not the model (`pitches.py` now renders it; sub mean +1.4 dB). `voicing.lowShelfDb` stays assumed, inside the noise.
 2. ~~Attack~~ closed 2026-10-05 pending the owner's ear: the plugin's rises are faster than the recording's everywhere (5 against 26 ms on ATTACK 0), the recording's rises are the performance (an MP3 round trip does not slow the plugin's), no click above the closed filter on Celesta, and a 0.3 ms minimum attack changes nothing. Likely cause of the impression: the old 0.49 master gain put chord peaks into the safety stage's tanh. Owner re-listens with the 0.22 build.
 3. ~~Chorus width~~ closed 2026-10-05: per band the side channel is a uniform 1.2 dB low (mode I -1.4/-1.3/-1.1/-0.1 dB), the -3.5 was the tonal balance leaking into the broadband ratio. Inside the schematic ratio's tolerance; left.
-4. **Condition layer / settings**: the trim choice is done (2026-10-05): `Condition` struct in the DSP (`src/dsp/Condition.h`, `Synth::setCondition`), a `demoTrim` bool in the plugin state (not in presets), default on, one Settings menu: the Standalone's title-bar button (JUCE's Options button hidden and replaced from `Jane60Editor::parentHierarchyChanged`), the strip button in hosts (`docs/user/settings.md`). Voice spread and drive still to model and add there. Side observation from the test: self-oscillation grows from the -100 dB noise bleed and takes about 3 s to reach full level on a silent patch; the hardware starts faster (check bank 7 patches by ear).
-5. **BA662 input weighting** (research only): a transistor-level model or a bench sweep.
-6. Calibration report: list every `assumed` key with its uncertainty (phase 4 exit criterion).
+4. ~~Condition layer / settings~~ done 2026-10-05: trim, voice spread, filter drive and chorus noise in one Settings menu, stored in plugin state, defaults documented in `docs/user/settings.md` and the report. History: `Condition` struct in the DSP (`src/dsp/Condition.h`, `Synth::setCondition`), a `demoTrim` bool in the plugin state (not in presets), default on, one Settings menu: the Standalone's title-bar button (JUCE's Options button hidden and replaced from `Jane60Editor::parentHierarchyChanged`), the strip button in hosts (`docs/user/settings.md`). Self-oscillation start (3 s from the noise bleed) was examined with the ngspice network run: the drawn BA662 limits at the same small margin, so a unit trimmed to 4 Vp-p is slow too; left, see the report.
+5. **BA662 input weighting** (research only, stays open past phase 4): the compensation leg acts 17 dB weaker than the ideal divider; candidates and the closing measurement are in the report. The Open Music Labs BA662 page (reverse-engineered internals) was unreachable from the cloud session's proxy; the owner can read it for an input resistor on pin 3.
+6. ~~Calibration report~~ done 2026-10-05: assumed keys with uncertainty, condition layer, README fidelity statement. Phase 4 exit criteria met.
+7. Fixed in passing: the strip showed "edited" at launch because the parameter defaults were not a patch; the preset manager now loads factory patch 1 on construction.
 
 ## Next phases (updated)
-- **Phase 4 finish**: items 1 to 4 above, then the calibration report exit.
 - **Phase 5, extras and Windows**: velocity and MPE as opt-in settings; **Windows Standalone + VST3** (x64, MSVC on `windows-latest` in CI, pluginval, zip artifact; no AU, no AAX). CMake already lists formats per platform (`JANE60_FORMATS`), so the work is a CI job, MSVC warning cleanup (`/W4`, the DSP uses `-Wconversion`-clean code already), and a Windows preset folder (`%APPDATA%\clevergear\Jane-Sixty`, the `PresetManager::userFolder()` path is the one place to change). Expect first-run issues with `juce::FileChooser` and the window default size code using the primary display.
 - **Phase 6, release**: signed and notarized macOS `.pkg`, Windows installer (Inno Setup or WiX), user manual, v1.0.
 - **Phase 7, performance layer**: scale and chord modes, Circuit Rhythm input, Launchpad LED feedback (research/06).
 
 ## How a session should start
-1. `git fetch origin claude/nice-wozniak-1s5ih6 && git checkout claude/nice-wozniak-1s5ih6`; `git submodule update --init` only if building the plugin (CI does that; Linux builds the DSP with `-DJANE60_BUILD_PLUGIN=OFF`).
+1. `git fetch origin claude/nice-wozniak-1s5ih6 && git checkout claude/nice-wozniak-1s5ih6`; `git submodule update --init --depth 1 libs/JUCE` only if building the plugin (CI does that; Linux builds the DSP with `-DJANE60_BUILD_PLUGIN=OFF`, or the Standalone as a compile check with the packages listed in the README; `ngspice` via apt runs the reference locally: `python3 tools/sim/ir3109_ref.py --out <dir>`).
 2. `cmake -S . -B build -DJANE60_BUILD_PLUGIN=OFF && cmake --build build -j8 && ctest --test-dir build`.
 3. Fetch the reference audio as above if listening comparisons are planned.
 4. Push every change; check the CI run; the macOS artifact is what the owner listens to.

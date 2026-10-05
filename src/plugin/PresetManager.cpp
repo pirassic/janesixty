@@ -12,7 +12,9 @@ PresetManager::PresetManager (juce::AudioProcessorValueTreeState& state, const s
     rescan();
     if (! factory_.empty())
     {
-        loaded_ = factory_.front().panel;
+        // Start on the first factory patch for real: the parameter defaults are not a patch, and
+        // leaving them made the strip show "edited" at launch before anything was touched.
+        apply (factory_.front().panel);
         other_ = loaded_;
     }
 }
