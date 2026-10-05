@@ -15,7 +15,10 @@ void Synth::prepare (const Calibration& cal, double sampleRate, double a4Hz)
     clock_.configure (cal.clock, a4Hz);
     pitch_.configure (cal.clock.masterClockHz, cal.clock.tuningA4Hz); // PROM table at the nominal clock
     lfo_.configure (cal.lfo, sampleRate);
-    noise_.configure (sampleRate, cal.dco.noiseVppAtMax);
+    // The noise trim target (4 Vp-p at the voice VCA output, adj. 6) is measured after the
+    // filter and VCA like the sawtooth's 4 Vp-p (adj. 5-1), so at the mixer the noise sits at
+    // the same level as the 12 Vp-p saw.
+    noise_.configure (sampleRate, cal.dco.noiseVppAtMax * (cal.dco.sawVpp / cal.vca.voiceOutVpp));
     hpf_.configure (cal.hpf, sampleRate);
     chorus_.prepare (cal.chorus, sampleRate);
     for (auto& v : voices_)
