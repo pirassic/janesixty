@@ -2,7 +2,9 @@
 // One Juno-60 DCO: an integrator ramp reset by the 8253 counter, with the
 // amplitude-compensation CV from a 7-bit DAC through an anti-log amplifier,
 // a comparator for the pulse and a divide-by-two flip-flop for the sub
-// (Service Notes p.14 Fig. 2, p.15 Fig. 3). Band-limited with PolyBLEP.
+// (Service Notes p.14 Fig. 2, p.15 Fig. 3). Band-limited with PolyBLEP at 2x the
+// host rate and a half-band decimator: the two-point PolyBLEP droops by 3 dB at a
+// quarter of its own rate, which at the host rate was audible as a lost top octave.
 //
 // Polarity: the hardware ramp falls from 0 V to -12 V and resets upward. The
 // pulse polarity relative to the saw is provisional (phase 4 checks it against
@@ -11,6 +13,7 @@
 
 #include "dsp/Calibration.h"
 #include "dsp/core/Blep.h"
+#include "dsp/core/HalfBand.h"
 
 #include <cmath>
 
@@ -32,13 +35,16 @@ public:
     {
         phase_ = 0.0;
         subHalf_ = false;
+        decSaw_.reset();
+        decPulse_.reset();
+        decSub_.reset();
     }
 
     void setPitch (long divisor, double clockHz) noexcept
     {
         divisor_ = divisor;
         freqHz_ = clockHz / static_cast<double> (divisor);
-        inc_ = freqHz_ / sr_;
+        inc_ = freqHz_ / (2.0 * sr_); // phase increment at the 2x rate
         if (inc_ > 0.49) inc_ = 0.49;
     }
 
@@ -72,6 +78,23 @@ public:
 
     Out tick() noexcept
     {
+        for (int i = 0; i < 2; ++i)
+        {
+            const Out o = tickOnce();
+            decSaw_.push (o.saw);
+            decPulse_.push (o.pulse);
+            decSub_.push (o.sub);
+        }
+        return { decSaw_.output(), decPulse_.output(), decSub_.output() };
+    }
+
+    [[nodiscard]] double frequencyHz() const noexcept { return freqHz_; }
+    [[nodiscard]] long divisor() const noexcept { return divisor_; }
+    [[nodiscard]] double duty() const noexcept { return duty_; }
+
+private:
+    Out tickOnce() noexcept
+    {
         const double dt = inc_;
         const double vpp = amplitudeVpp_;
         const double half = vpp * 0.5;
@@ -103,11 +126,6 @@ public:
         return { saw, pulse, sub };
     }
 
-    [[nodiscard]] double frequencyHz() const noexcept { return freqHz_; }
-    [[nodiscard]] long divisor() const noexcept { return divisor_; }
-    [[nodiscard]] double duty() const noexcept { return duty_; }
-
-private:
     static double wrap (double t) noexcept { return t < 0.0 ? t + 1.0 : t; }
 
     Calibration::Dco cal_ {};
@@ -119,6 +137,7 @@ private:
     double duty_ = 0.5;
     bool subHalf_ = false;
     double amplitudeVpp_ = 12.0;
+    HalfBandDecimator decSaw_, decPulse_, decSub_;
 };
 
 /// The shared noise generator: reverse-biased 2SC945 junction with a mild roll-off.

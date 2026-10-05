@@ -14,6 +14,7 @@
 #pragma once
 
 #include "dsp/Calibration.h"
+#include "dsp/core/HalfBand.h"
 
 #include <cmath>
 
@@ -35,8 +36,7 @@ public:
     {
         for (auto& s : s_) s = 0.0;
         y4_ = 0.0;
-        for (auto& h : hist_) h = 0.0;
-        w_ = 0;
+        dec_.reset();
     }
 
     /// cutoffHz: cutoff of each one-pole stage. k: feedback gain, 4 = self-oscillation threshold.
@@ -56,15 +56,9 @@ public:
     /// Input in volts at the mixer output; output in volts, referred back to the input scale.
     double process (double inVolts) noexcept
     {
-        push (tickInternal (inVolts));
-        push (tickInternal (inVolts));
-        // Half-band FIR centred 15 samples back; even taps are zero except the centre.
-        static constexpr double c[8] = { 0.313737466, -0.0930905437, 0.0439889791, -0.0215919023,
-                                         0.00980408201, -0.00377247227, 0.00106450368, -0.000125861305 };
-        double y = 0.5 * at (15);
-        for (int k = 0; k < 8; ++k)
-            y += c[k] * (at (15 - (2 * k + 1)) + at (15 + (2 * k + 1)));
-        return y;
+        dec_.push (tickInternal (inVolts));
+        dec_.push (tickInternal (inVolts));
+        return dec_.output();
     }
 
     [[nodiscard]] double feedbackGain() const noexcept { return k_; }
@@ -109,18 +103,9 @@ private:
         return y4 * vt2 / attenuation_;
     }
 
-    void push (double v) noexcept
-    {
-        w_ = (w_ + 1) & 31;
-        hist_[w_] = v;
-    }
-    /// Sample `back` steps before the newest one (0 = newest).
-    [[nodiscard]] double at (int back) const noexcept { return hist_[(w_ - back) & 31]; }
-
     Calibration::Vcf cal_ {};
     double sr_ = 96000.0;
-    double hist_[32] {};
-    int w_ = 0;
+    HalfBandDecimator dec_;
     double attenuation_ = 560.0 / 68560.0;
     double g_ = 0.0;
     double k_ = 0.0;

@@ -94,16 +94,17 @@ TEST_CASE ("DCO: sawtooth period matches the divisor and amplitude is 12 Vp-p")
     d.setPitch (t.divisor[69], cal().clock.masterClockHz);
     CHECK_THAT (d.frequencyHz(), WithinRel (442.0, 0.001));
 
+    // A band-limited ramp overshoots at its edge (Gibbs), so the amplitude is checked by
+    // RMS: a 12 Vp-p ramp has an RMS of 12 / sqrt (12).
     std::vector<double> saw;
-    double mx = -1e9, mn = 1e9;
+    double sq = 0.0;
     for (int i = 0; i < 96000; ++i)
     {
         const auto o = d.tick();
         saw.push_back (o.saw);
-        mx = std::max (mx, o.saw);
-        mn = std::min (mn, o.saw);
+        if (i >= 1000) sq += o.saw * o.saw;
     }
-    CHECK_THAT (mx - mn, WithinRel (12.0, 0.03));
+    CHECK_THAT (std::sqrt (sq / 95000.0), WithinRel (12.0 / std::sqrt (12.0), 0.02));
     CHECK_THAT (zeroCrossingFrequency (saw, sr, 1000), WithinRel (442.0, 0.01));
 }
 
