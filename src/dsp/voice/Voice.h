@@ -64,7 +64,7 @@ public:
         vca_.configure (cal.vca, sampleRate);
         env_.configure (cal.env, sampleRate);
         // Cutoff at FREQ 0 (used to size the ENV depth so ENV 10 from FREQ 0 peaks at envFullPeakHz).
-        const double f0 = cal.vcf.anchorHz * std::exp2 ((0.0 - cal.vcf.anchorSliderPos) * map_.octavesPerSliderUnit);
+        const double f0 = cal.vcf.anchorHz * std::exp2 ((0.0 - cal.vcf.anchorSliderPos) * map_.octavesPerSliderUnit + cal.vcf.trimOffsetOct);
         envFullDepthOct_ = std::log2 (cal.vcf.envFullPeakHz / f0);
     }
 
@@ -134,7 +134,7 @@ public:
 
         // Cutoff CV: FREQ + ENV*depth*polarity + LFO*depth + KYBD + pedal + bender
         const Calibration::Vcf& v = cal_->vcf;
-        double oct = (p.vcfFreq - v.anchorSliderPos) * map_.octavesPerSliderUnit;
+        double oct = (p.vcfFreq - v.anchorSliderPos) * map_.octavesPerSliderUnit + v.trimOffsetOct;
         const double envDepth = VcfMapping::cvDepth (p.vcfEnv) * envFullDepthOct_;
         oct += (p.vcfPolarity == VcfPolarity::normal ? 1.0 : -1.0) * envDepth * env;
         oct += VcfMapping::cvDepth (p.vcfLfo) * v.lfoFullDepthOct * lfo;

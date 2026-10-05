@@ -31,6 +31,7 @@
     "qCompensation":          { "value": 0.308, "source": "plugin-derived; confirmed to about 2 dB by the loudness balance of resonant vs non-resonant patches in the factory demo recording (docs/calibration-report.md). The p.9 network with an ideal BA662 predicts the opposite sign; the chip's input weighting is the open item" },
     "anchorSliderPos":        { "value": 3.0,   "source": "service-notes p.22 Table 6 patch 84, p.24 adj.8-2" },
     "anchorHz":               { "value": 248.0, "source": "service-notes p.24 adj.8-2" },
+    "trimOffsetOct":          { "value": 1.0,   "source": "assumed: unit trim. The factory demo recording sits about 1.2 octaves above the Service Notes trim at every FREQ setting (tools/listen, docs/research/10); 0 restores the manual's calibration" },
     "selfOscVpp":             { "value": 4.0,   "source": "service-notes p.24 adj.8-1" },
     "keyFollowPivotNote":     { "value": 60,    "source": "service-notes p.24 adj.8-3 (C4 = 248 Hz with KYBD 10)" },
     "keyFollowOctPerOct":     { "value": 1.0,   "source": "service-notes p.24 adj.8-4 (C6 = 992 Hz)" },

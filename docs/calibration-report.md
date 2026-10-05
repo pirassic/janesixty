@@ -47,6 +47,9 @@ R5 confirmed 47 k by the owner on two scans, so the resistor is not the discrepa
 
 The hardware loses passband with resonance about as the 0.308 model does (the last column is bank 7's self-oscillating effect patches, whose levels the demo clearly rode). The ideal symmetric-input BA662 in the netlist is therefore the wrong element; the chip's two inputs do not weigh equally, which no datasheet can confirm. `vcf.qCompensation` stays 0.308, now tagged `plugin-derived, confirmed by the demo recording to about 2 dB`.
 
+### VCF trim offset (this step)
+`vcf.trimOffsetOct` = 1.0, `assumed` (unit condition). The demo recording's cutoffs sit a constant ~1.2 octaves above the Service Notes trim across the whole FREQ range (per-patch best offset against the recording: +1.25 oct at FREQ 0 to 4, +0.64 at 4 to 6, +1.25 at 6 to 8, many patches at the +2 limit of the sweep). The manual's own numbers stay as the anchor (248 Hz at FREQ 3); the offset is the first entry of the condition layer and belongs in a user setting (Service Notes trim / demo unit) in a later step.
+
 ### Open questions carried
 - BA662 input asymmetry: the drawn network with an ideal OTA predicts a passband rise that the recording rules out. A transistor-level BA662 model, or a bench sweep, would close it.
 - Resonance network, resolved on a second reading (owner's crop and an external findings note, 2026-10-05): the 47 k compensation leg enters BA662 pin 3 (+) with R2 1.5 k to ground, the 100 k feedback leg enters pin 2 (-) with R1 1.5 k. Input adds, feedback subtracts. The `network` rows in the simulation report now run this differential form on a resonance axis normalised by its own simulated oscillation threshold, so the drawn compensation's passband curve can be read against the plugin's 0.308 coefficient. That coefficient stays `plugin-derived`: the ~7 dB loss it was fitted to has no primary measurement behind it.

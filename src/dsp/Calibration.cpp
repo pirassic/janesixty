@@ -140,6 +140,7 @@ Calibration Calibration::fromJson (std::string_view jsonText)
     c.vcf.qCompensation           = r.number ("vcf.qCompensation");
     c.vcf.anchorSliderPos         = r.number ("vcf.anchorSliderPos");
     c.vcf.anchorHz                = r.number ("vcf.anchorHz");
+    c.vcf.trimOffsetOct           = r.number ("vcf.trimOffsetOct");
     c.vcf.selfOscVpp              = r.number ("vcf.selfOscVpp");
     c.vcf.keyFollowPivotNote      = r.integer ("vcf.keyFollowPivotNote");
     c.vcf.keyFollowOctPerOct      = r.number ("vcf.keyFollowOctPerOct");

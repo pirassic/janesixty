@@ -74,6 +74,7 @@ struct Calibration
         double qCompensation = 0.308;      ///< input-side Q compensation (Juno-6 reading)
         double anchorSliderPos = 3.0;      ///< FREQ slider position for the 248 Hz anchor
         double anchorHz = 248.0;           ///< self-oscillation at the anchor
+        double trimOffsetOct = 0.0;        ///< unit trim relative to the Service Notes 248 Hz point (condition layer)
         double selfOscVpp = 4.0;           ///< resonance trim target
         int keyFollowPivotNote = 60;       ///< C4: no cutoff change at KYBD 10
         double keyFollowOctPerOct = 1.0;   ///< at KYBD 10
