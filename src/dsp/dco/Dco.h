@@ -76,21 +76,23 @@ public:
         const double vpp = amplitudeVpp_;
         const double half = vpp * 0.5;
 
+        // The polyBlep residual cancels a step of 2 units (the +-1 textbook saw), so a
+        // step of Vpp takes half * residual.
         // Falling ramp with an upward reset step of +Vpp at phase 0.
         double saw = half - vpp * phase_;
-        saw += vpp * polyBlep (phase_, dt);
+        saw += half * polyBlep (phase_, dt);
 
         // Pulse: high for phase < duty. Rising edge at 0, falling edge at duty.
         double pulse = phase_ < duty_ ? half : -half;
-        pulse += vpp * polyBlep (phase_, dt);
-        pulse -= vpp * polyBlep (wrap (phase_ - duty_), dt);
+        pulse += half * polyBlep (phase_, dt);
+        pulse -= half * polyBlep (wrap (phase_ - duty_), dt);
 
         // Sub: square at half frequency, phase-locked to the reset.
         const double subPhase = (subHalf_ ? 0.5 : 0.0) + 0.5 * phase_;
         const double dts = 0.5 * dt;
         double sub = subPhase < 0.5 ? half : -half;
-        sub += vpp * polyBlep (subPhase, dts);
-        sub -= vpp * polyBlep (wrap (subPhase - 0.5), dts);
+        sub += half * polyBlep (subPhase, dts);
+        sub -= half * polyBlep (wrap (subPhase - 0.5), dts);
 
         phase_ += dt;
         if (phase_ >= 1.0)

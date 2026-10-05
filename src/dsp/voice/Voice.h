@@ -20,10 +20,10 @@ namespace jane60
 struct VcfMapping
 {
     /// Cutoff slider: octaves per slider unit, anchored at the 248 Hz point.
-    /// assumed: linear in octaves, 1 oct per unit, ~31 Hz (0) to ~31 kHz (10). Raised from
-    /// 0.9 after listening against the factory demo recordings (patches sat darker than the
-    /// originals at the same FREQ setting); the ngspice sweep in phase 4 settles it.
-    double octavesPerSliderUnit = 1.0;
+    /// assumed: linear in octaves between ~38 Hz (0) and ~19.5 kHz (10). A trial at 1.0
+    /// put FREQ 8..10 above anything the hardware reaches and was heard as noise; the
+    /// ngspice sweep in phase 4 settles it.
+    double octavesPerSliderUnit = 0.9;
 
     /// Resonance slider position at which k reaches 4 (self-oscillation threshold).
     /// assumed: plugin-derived 0.75..0.8 of travel.
