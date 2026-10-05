@@ -202,6 +202,16 @@ Calibration Calibration::fromJson (std::string_view jsonText)
     c.chorus.wetGain       = r.number ("chorus.wetGain");
     c.chorus.bbdClipVpp    = r.number ("chorus.bbdClipVpp");
     c.chorus.bbdClipRoomV  = r.number ("chorus.bbdClipRoomV");
+    c.chorus.preRealHz  = r.number ("chorus.preRealHz");
+    c.chorus.preAHz     = r.number ("chorus.preAHz");
+    c.chorus.preAQ      = r.number ("chorus.preAQ");
+    c.chorus.preBHz     = r.number ("chorus.preBHz");
+    c.chorus.preBQ      = r.number ("chorus.preBQ");
+    c.chorus.postAHz    = r.number ("chorus.postAHz");
+    c.chorus.postAQ     = r.number ("chorus.postAQ");
+    c.chorus.postBHz    = r.number ("chorus.postBHz");
+    c.chorus.postBQ     = r.number ("chorus.postBQ");
+    c.chorus.postRealHz = r.number ("chorus.postRealHz");
 
     if (root.contains ("voicing"))
     {

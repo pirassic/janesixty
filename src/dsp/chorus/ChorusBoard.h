@@ -113,17 +113,15 @@ public:
         lineL_.prepare (sampleRate, maxDelay + 1.0);
         lineR_.prepare (sampleRate, maxDelay + 1.0);
 
-        // Pre-BBD chain (jpcima's schematic-derived set): real pole 7.41 kHz,
-        // pairs 9.69 kHz Q 0.55 and 10.34 kHz Q 1.24.
-        preReal_.set (7410.0, sampleRate);
-        preA_.set (9690.0, 0.55, sampleRate);
-        preB_.set (10340.0, 1.24, sampleRate);
-        // Post-BBD chain per channel: pairs 8.87 kHz Q 0.54 and 10.38 kHz Q 1.24, real 28 kHz.
+        // Pre- and post-BBD filter chains from the calibration file (sources there).
+        preReal_.set (std::min (c.preRealHz, sampleRate * 0.45), sampleRate);
+        preA_.set (std::min (c.preAHz, sampleRate * 0.45), c.preAQ, sampleRate);
+        preB_.set (std::min (c.preBHz, sampleRate * 0.45), c.preBQ, sampleRate);
         for (std::size_t ch = 0; ch < 2; ++ch)
         {
-            postA_[ch].set (8870.0, 0.54, sampleRate);
-            postB_[ch].set (10380.0, 1.24, sampleRate);
-            postReal_[ch].set (std::min (28000.0, sampleRate * 0.45), sampleRate);
+            postA_[ch].set (std::min (c.postAHz, sampleRate * 0.45), c.postAQ, sampleRate);
+            postB_[ch].set (std::min (c.postBHz, sampleRate * 0.45), c.postBQ, sampleRate);
+            postReal_[ch].set (std::min (c.postRealHz, sampleRate * 0.45), sampleRate);
         }
         // Mute fade: the JFET gate RC on the schematic (2.2 uF with 150 k / 560 k) gives
         // a slow on/off; assumed ~150 ms.
