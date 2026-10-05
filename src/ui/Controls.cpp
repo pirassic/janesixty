@@ -111,7 +111,7 @@ void LedButton::paintButton (juce::Graphics& g, bool highlighted, bool down)
     {
         g.setColour (juce::Colour (0xff1e1a14));
         g.setFont (juce::FontOptions (layout::fontCap, juce::Font::bold));
-        g.drawText (capText_, cap, juce::Justification::centred, false);
+        g.drawFittedText (capText_, cap.toNearestInt().reduced (2, 0), juce::Justification::centred, 1, 0.6f);
     }
 }
 

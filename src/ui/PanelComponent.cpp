@@ -251,11 +251,12 @@ void PanelComponent::buildMemory (int x0, int x1)
     addLegend ("BANK / PATCH", { x0 - 6, row1 - 14 - rowLegendH - 2, 92, rowLegendH }, fontLegend - 2.0f, 1);
 
     int bx = x0 + 80 + 14;
-    addLegend ("BANK  (shift-click 1 / 2 for 6 / 7)", { bx, row1 - rowLegendH - 4, 5 * memBtnCol + 60, rowLegendH }, fontLegend - 2.0f, 1);
+    addLegend ("BANK", { bx, row1 - rowLegendH - 4, 5 * memBtnCol, rowLegendH }, fontLegend - 2.0f, 1);
     for (int i = 0; i < 5; ++i)
     {
         const int bank = i + 1;
-        auto b = addMemoryButton (juce::String (bank), bx + i * memBtnCol, row1, memBtnW, colours::buttonCream, false, "Bank " + juce::String (bank));
+        auto b = addMemoryButton (juce::String (bank), bx + i * memBtnCol, row1, memBtnW, colours::buttonCream, false,
+                                  "Bank " + juce::String (bank) + (bank <= 2 ? " (Shift-click: bank " + juce::String (bank + 5) + ")" : juce::String()));
         b->onClick = [this, bank]
         {
             auto mods = juce::ModifierKeys::getCurrentModifiersRealtime();
@@ -506,7 +507,14 @@ void PanelComponent::paint (juce::Graphics& g)
     g.setColour (colours::bandCream);
     g.fillRect (juce::Rectangle<float> (static_cast<float> (panelX), panelY + panelH - 8.0f, 220.0f, 8.0f));
 
-    // Control legends
+    // Bender panel
+    juce::Rectangle<float> bp (benderX, benderY, benderW, benderH);
+    g.setColour (colours::panelEdge);
+    g.fillRoundedRectangle (bp.expanded (4.0f), 4.0f);
+    g.setColour (colours::panel);
+    g.fillRect (bp);
+
+    // Control legends (after every background fill)
     for (const auto& l : legends_)
     {
         g.setColour (colours::legend);
@@ -515,13 +523,6 @@ void PanelComponent::paint (juce::Graphics& g)
     }
 
     drawLegend (g, "PROGRAMMABLE POLYPHONIC SYNTHESIZER", { panelX + panelW - 560.0f, panelY + panelH + 6.0f, 560.0f, 20.0f }, juce::Justification::centredRight, 14.0f);
-
-    // Bender panel
-    juce::Rectangle<float> bp (benderX, benderY, benderW, benderH);
-    g.setColour (colours::panelEdge);
-    g.fillRoundedRectangle (bp.expanded (4.0f), 4.0f);
-    g.setColour (colours::panel);
-    g.fillRect (bp);
 
     // Wooden end cheeks
     g.setColour (colours::wood);

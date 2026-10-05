@@ -44,7 +44,7 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
     edited_.setJustificationType (juce::Justification::centredLeft);
     edited_.setFont (juce::FontOptions (16.0f, juce::Font::bold));
     edited_.setColour (juce::Label::textColourId, juce::Colour (0xffff9f40));
-    hint_.setText ("Keys: A S D F G H J K play, W E T Y U sharps, Z / X octave. 1 to 7 chords, Space loops a progression (docs/user/keyboard-shortcuts.md).", juce::dontSendNotification);
+    hint_.setText ("Keys: A S D F G H J K play, W E T Y U sharps, Z / X octave. 1 to 7 chords, Space loops a progression. Shift + bank 1 / 2 = bank 6 / 7. See docs/user/keyboard-shortcuts.md", juce::dontSendNotification);
     hint_.setJustificationType (juce::Justification::centredRight);
     hint_.setFont (juce::FontOptions (14.0f));
     hint_.setColour (juce::Label::textColourId, juce::Colour (0xff9a9a9a));
