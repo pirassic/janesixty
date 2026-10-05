@@ -4,6 +4,8 @@
 #include "Parameters.h"
 #include "PluginEditor.h"
 
+#include <algorithm>
+
 namespace jane60
 {
 
@@ -85,6 +87,12 @@ void Jane60Processor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
         if (events_.size() < events_.capacity())
             events_.push_back (e);
     }
+
+    if (uiBenderDirty_.exchange (false))
+        events_.push_back ({ 0, MidiEvent::Type::pitchBend, 0, uiBender_.load() });
+    if (uiLfoTrigDirty_.exchange (false))
+        events_.push_back ({ 0, MidiEvent::Type::lfoTrig, 0, uiLfoTrig_.load() ? 1.0 : 0.0 });
+    std::stable_sort (events_.begin(), events_.end(), [] (const MidiEvent& a, const MidiEvent& b) { return a.sampleOffset < b.sampleOffset; });
 
     synth_.setPanel (params::readPanel (apvts_));
 

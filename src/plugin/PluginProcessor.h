@@ -8,6 +8,7 @@
 #include "dsp/presets/FactoryPatches.h"
 #include "PresetManager.h"
 
+#include <atomic>
 #include <vector>
 
 namespace jane60
@@ -49,6 +50,10 @@ public:
     juce::UndoManager& undoManager() noexcept { return undo_; }
     juce::MidiKeyboardState& keyboardState() noexcept { return keyboardState_; }
 
+    // Panel controls that are MIDI-like events rather than parameters.
+    void setUiBender (double minusOneToOne) noexcept { uiBender_.store (minusOneToOne); uiBenderDirty_.store (true); }
+    void setUiLfoTrig (bool down) noexcept { uiLfoTrig_.store (down); uiLfoTrigDirty_.store (true); }
+
 private:
     static Calibration loadEmbeddedCalibration();
     static std::vector<FactoryPatch> loadEmbeddedFactoryPatches();
@@ -60,6 +65,10 @@ private:
     PresetManager presets_;
     Synth synth_;
     juce::MidiKeyboardState keyboardState_;
+    std::atomic<double> uiBender_ { 0.0 };
+    std::atomic<bool> uiBenderDirty_ { false };
+    std::atomic<bool> uiLfoTrig_ { false };
+    std::atomic<bool> uiLfoTrigDirty_ { false };
     std::vector<MidiEvent> events_;
     int currentProgram_ = 0;
 
