@@ -42,7 +42,7 @@ def main():
     d = {int(x["harmonic"]): float(x["dbReH1"]) for x in load(os.path.join(a.dsp, "harmonics.csv"))}
     lines += ["", "## Harmonics of a 12 Vp-p 220 Hz sine, FC 2 kHz, k 0 (tolerance 2 dB)", "", "| H | reference dB | plugin dB | diff |", "|---|---|---|---|"]
     for k in r:
-        rv, dv = max(r[k], -90.0), max(d[k], -90.0)   # below -90 dB both are "absent"
+        rv, dv = max(r[k], -80.0), max(d[k], -80.0)   # below -80 dB both are at the simulation noise floor
         diff = dv - rv
         flag = "" if abs(diff) <= 2.0 else " (!)"
         ok &= abs(diff) <= 2.0

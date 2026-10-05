@@ -130,14 +130,33 @@ def harmonic_db(t, y, f0, nmax):
         out.append(math.hypot(re, im))
     return [20 * math.log10(a / out[0] + 1e-15) for a in out[1:]]
 
+def diag(wd):
+    """Operating point and small-signal checks of the network netlist at gm = 0, printed to stdout."""
+    ctl = f""".control
+set wr_vecnames
+set wr_singlescale
+dc Vin 1 1 1
+print v(mix) v(na) v(s1) v(np) v(nm) v(y1) v(y4)
+ac dec 10 10 10k
+print vdb(y4)
+quit
+.endc"""
+    net = netlist("network", 1000.0, gm=0.0, analysis=ctl).replace("Vin mix 0 dc 0 ac 1", "Vin mix 0 dc 1 ac 1")
+    print(net)
+    print(run(net, wd, "diag"))
+
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument("--diag", action="store_true")
     ap.add_argument("--out", default="sim-out")
     ap.add_argument("--shift", type=float, default=248.0 / 227.9, help="plugin selfOscShift")
     ap.add_argument("--kmax", type=float, default=4.05)
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
     wd = tempfile.mkdtemp(prefix="ir3109_")
+    if args.diag:
+        diag(wd)
+        return
 
     freqs = [100.0, 1000.0, 4000.0, 8000.0]
     g = ac_gain_db(wd, "model", 1000.0, freqs, k=0.0)
