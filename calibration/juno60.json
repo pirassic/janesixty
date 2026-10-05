@@ -28,7 +28,7 @@
     "inputResistorOhm":       { "value": 68000, "source": "schematic p.9 (standard IR3109 network)" },
     "shuntResistorOhm":       { "value": 560,   "source": "schematic p.9" },
     "stageCapPf":             { "value": 240,   "source": "schematic p.9" },
-    "qCompensation":          { "value": 0.308, "source": "assumed: Juno-6 schematic reading, verify on Juno-60 p.9" },
+    "qCompensation":          { "value": 0.308, "source": "plugin-derived; confirmed to about 2 dB by the loudness balance of resonant vs non-resonant patches in the factory demo recording (docs/calibration-report.md). The p.9 network with an ideal BA662 predicts the opposite sign; the chip's input weighting is the open item" },
     "anchorSliderPos":        { "value": 3.0,   "source": "service-notes p.22 Table 6 patch 84, p.24 adj.8-2" },
     "anchorHz":               { "value": 248.0, "source": "service-notes p.24 adj.8-2" },
     "selfOscVpp":             { "value": 4.0,   "source": "service-notes p.24 adj.8-1" },

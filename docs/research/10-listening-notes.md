@@ -37,3 +37,7 @@ Finding: with the FREQ slider at 0.9 octaves per unit the plugin was dark on nea
 | 1.5 | -4.4 | -5.3 | -7.2 | -0.4 |
 
 Patches with FREQ above 5 come within 2 to 4 dB at 1.33; the residual sits in the FREQ 3 to 5 group (about -8 dB in the mids), which no slope fixes with the anchor pinned, so it points at the mixer levels (sub, pulse) or the PWM law rather than the filter. Adopted 1.33: the spec-derived span, consistent with the ENV depth. The earlier 1.0 trial had been judged with the DCO aliasing bug present, which is why it was heard as noise at the top of the slider.
+
+## 2026-10-05, resonance compensation against the recording
+
+Relative loudness of resonant patches (RES 1.5 to 7) against non-resonant ones matches the plugin's 0.308 compensation within 2 dB; the schematic-derived 2.4 would make them 7 to 8 dB too loud. Kept 0.308. See the calibration report.
