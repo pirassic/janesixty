@@ -50,6 +50,12 @@ public:
     juce::UndoManager& undoManager() noexcept { return undo_; }
     juce::MidiKeyboardState& keyboardState() noexcept { return keyboardState_; }
 
+    // Condition layer (settings panel): stored in the plugin state, never in presets.
+    // demoTrim: VCF trim of the factory demo unit (calibration vcf.trimOffsetOct) instead of the
+    // Service Notes trim. Default on, so the factory bank sounds like the demo recording.
+    void setDemoTrim (bool on) noexcept { demoTrim_.store (on); }
+    [[nodiscard]] bool demoTrim() const noexcept { return demoTrim_.load(); }
+
     // Panel controls that are MIDI-like events rather than parameters.
     void setUiBender (double minusOneToOne) noexcept { uiBender_.store (minusOneToOne); uiBenderDirty_.store (true); }
     void setUiLfoTrig (bool down) noexcept { uiLfoTrig_.store (down); uiLfoTrigDirty_.store (true); }
@@ -71,6 +77,10 @@ private:
     std::atomic<bool> uiLfoTrigDirty_ { false };
     std::vector<MidiEvent> events_;
     int currentProgram_ = 0;
+    std::atomic<bool> demoTrim_ { true };
+    bool appliedDemoTrim_ = true;
+
+    void applyCondition (bool force) noexcept;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Jane60Processor)
 };

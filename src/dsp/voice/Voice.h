@@ -63,9 +63,17 @@ public:
         vcf_.configure (cal.vcf, sampleRate);
         vca_.configure (cal.vca, sampleRate);
         env_.configure (cal.env, sampleRate);
+        setTrimOffsetOct (cal.vcf.trimOffsetOct); // the demo unit's trim until the condition layer says otherwise
+    }
+
+    /// Unit trim (condition layer), octaves relative to the Service Notes 248 Hz point.
+    void setTrimOffsetOct (double oct) noexcept
+    {
+        trimOffsetOct_ = oct;
         // Cutoff at FREQ 0 (used to size the ENV depth so ENV 10 from FREQ 0 peaks at envFullPeakHz).
-        const double f0 = cal.vcf.anchorHz * std::exp2 ((0.0 - cal.vcf.anchorSliderPos) * map_.octavesPerSliderUnit + cal.vcf.trimOffsetOct);
-        envFullDepthOct_ = std::log2 (cal.vcf.envFullPeakHz / f0);
+        const Calibration::Vcf& v = cal_->vcf;
+        const double f0 = v.anchorHz * std::exp2 ((0.0 - v.anchorSliderPos) * map_.octavesPerSliderUnit + trimOffsetOct_);
+        envFullDepthOct_ = std::log2 (v.envFullPeakHz / f0);
     }
 
     void noteOn (int note) noexcept
@@ -134,7 +142,7 @@ public:
 
         // Cutoff CV: FREQ + ENV*depth*polarity + LFO*depth + KYBD + pedal + bender
         const Calibration::Vcf& v = cal_->vcf;
-        double oct = (p.vcfFreq - v.anchorSliderPos) * map_.octavesPerSliderUnit + v.trimOffsetOct;
+        double oct = (p.vcfFreq - v.anchorSliderPos) * map_.octavesPerSliderUnit + trimOffsetOct_;
         const double envDepth = VcfMapping::cvDepth (p.vcfEnv) * envFullDepthOct_;
         oct += (p.vcfPolarity == VcfPolarity::normal ? 1.0 : -1.0) * envDepth * env;
         oct += VcfMapping::cvDepth (p.vcfLfo) * v.lfoFullDepthOct * lfo;
@@ -185,6 +193,7 @@ private:
     Ir3r01Envelope env_;
     VcfMapping map_;
     double envFullDepthOct_ = 10.0;
+    double trimOffsetOct_ = 0.0;
     double manualDuty_ = 0.5;
     int note_ = 60;
     int octaveOffset_ = 0;

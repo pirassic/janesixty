@@ -492,3 +492,48 @@ TEST_CASE ("preset JSON round-trips every patch field and rejects bad input")
     b.vcfFreq += 0.5;
     CHECK_FALSE (patchFieldsEqual (a, b));
 }
+
+TEST_CASE ("condition layer: the VCF trim choice moves self-oscillation by the calibration offset, presets carry none of it")
+{
+    // Patch 84 from the Service Notes calibration (FREQ 3, RES 10, no ENV / LFO / KYBD): the
+    // filter self-oscillates at 248 Hz on a unit trimmed to the manual.
+    PanelState p;
+    p.sawOn = false; p.pulseOn = false; p.subOn = false;
+    p.vcfFreq = 3.0; p.vcfRes = 10.0; p.vcfEnv = 0.0; p.vcfLfo = 0.0; p.vcfKybd = 0.0;
+    p.attack = 0.0; p.decay = 0.0; p.sustain = 10.0; p.release = 0.0;
+    p.chorus = ChorusSwitch::off;
+    auto oscHz = [&] (const Condition& c)
+    {
+        Synth s;
+        s.setPanel (p);
+        s.prepare (cal(), 48000.0, 440.0);
+        s.setCondition (c);
+        // The oscillation grows from the mixer's noise bleed: give it 4 s, measure the last second.
+        std::vector<float> l (48000), r (48000);
+        std::vector<MidiEvent> ev { { 0, MidiEvent::Type::noteOn, 60, 0.0 } };
+        s.render (l.data(), r.data(), 48000, ev);
+        std::vector<MidiEvent> none;
+        for (int i = 0; i < 3; ++i) s.render (l.data(), r.data(), 48000, none);
+        std::vector<double> x (l.begin(), l.end());
+        double peak = 0.0;
+        for (double v : x) peak = std::max (peak, std::abs (v));
+        INFO ("self-oscillation peak " << peak);
+        return zeroCrossingFrequency (x, 48000.0, 0);
+    };
+    const double manual = oscHz (Condition::serviceNotes());
+    const double demo = oscHz (Condition::demoUnit (cal()));
+    CHECK_THAT (manual, WithinRel (248.0, 0.05));
+    CHECK_THAT (demo / manual, WithinRel (std::exp2 (cal().vcf.trimOffsetOct), 0.05));
+
+    // prepare() starts from the demo unit, as the render tools and the plugin default do.
+    Synth s;
+    s.setPanel (p);
+    s.prepare (cal(), 48000.0, 440.0);
+    CHECK (s.condition().vcfTrimOffsetOct == cal().vcf.trimOffsetOct);
+
+    // The preset format has no field for it: a round trip of the panel is unaffected by the condition.
+    Preset pr;
+    pr.name = "x";
+    pr.panel = p;
+    CHECK (presetToJson (pr).find ("trim") == std::string::npos);
+}

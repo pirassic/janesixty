@@ -8,6 +8,41 @@ namespace jane60
 
 using namespace ui::layout;
 
+namespace
+{
+/// Settings call-out: the condition layer (unit properties), not patch data.
+class SettingsPanel final : public juce::Component
+{
+public:
+    explicit SettingsPanel (Jane60Processor& p) : processor_ (p)
+    {
+        title_.setText ("Settings (this instance, saved with the project, not in presets)", juce::dontSendNotification);
+        title_.setFont (juce::FontOptions (15.0f, juce::Font::bold));
+        addAndMakeVisible (title_);
+        demoTrim_.setButtonText ("Match the factory demo unit: VCF trim one octave above the Service Notes");
+        demoTrim_.setToggleState (processor_.demoTrim(), juce::dontSendNotification);
+        demoTrim_.onClick = [this] { processor_.setDemoTrim (demoTrim_.getToggleState()); };
+        addAndMakeVisible (demoTrim_);
+        note_.setText ("Off restores the Service Notes trim (248 Hz at FREQ 3): every patch sits one octave darker, as the manual specifies.", juce::dontSendNotification);
+        note_.setFont (juce::FontOptions (13.0f));
+        note_.setColour (juce::Label::textColourId, juce::Colour (0xff9a9a9a));
+        addAndMakeVisible (note_);
+        setSize (560, 110);
+    }
+    void resized() override
+    {
+        auto r = getLocalBounds().reduced (12, 8);
+        title_.setBounds (r.removeFromTop (24));
+        demoTrim_.setBounds (r.removeFromTop (28));
+        note_.setBounds (r);
+    }
+private:
+    Jane60Processor& processor_;
+    juce::Label title_, note_;
+    juce::ToggleButton demoTrim_;
+};
+} // namespace
+
 Jane60Editor::Jane60Editor (Jane60Processor& p)
     : AudioProcessorEditor (&p),
       processor_ (p),
@@ -36,7 +71,7 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
     content_.addAndMakeVisible (keyboard_);
 
     // Modern strip
-    for (auto* b : { &prev_, &next_, &ab_, &copy_, &save_, &undo_ })
+    for (auto* b : { &prev_, &next_, &ab_, &copy_, &save_, &undo_, &settings_ })
         content_.addAndMakeVisible (b);
     content_.addAndMakeVisible (presetBox_);
     content_.addAndMakeVisible (edited_);
@@ -55,6 +90,7 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
     copy_.onClick = [this] { processor_.presets().copyActiveToOther(); };
     save_.onClick = [this] { savePreset(); };
     undo_.onClick = [this] { processor_.undoManager().undo(); };
+    settings_.onClick = [this] { openSettings(); };
     presetBox_.onChange = [this]
     {
         const int idx = presetBox_.getSelectedId() - 1;
@@ -70,6 +106,8 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
         prev_.setBounds (strip.removeFromLeft (40));
         next_.setBounds (strip.removeFromLeft (40));
         strip.removeFromLeft (8);
+        settings_.setBounds (strip.removeFromRight (90));
+        strip.removeFromRight (4);
         undo_.setBounds (strip.removeFromRight (72));
         strip.removeFromRight (4);
         save_.setBounds (strip.removeFromRight (72));
@@ -78,7 +116,7 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
         strip.removeFromRight (4);
         ab_.setBounds (strip.removeFromRight (52));
         strip.removeFromRight (8);
-        hint_.setBounds (strip.removeFromRight (900));
+        hint_.setBounds (strip.removeFromRight (810));
         edited_.setBounds (strip.removeFromRight (80));
         presetBox_.setBounds (strip);
     }
@@ -143,6 +181,11 @@ void Jane60Editor::savePreset()
             refreshPresetList();
         }
     }), true);
+}
+
+void Jane60Editor::openSettings()
+{
+    juce::CallOutBox::launchAsynchronously (std::make_unique<SettingsPanel> (processor_), settings_.getScreenBounds(), nullptr);
 }
 
 bool Jane60Editor::keyPressed (const juce::KeyPress& key)

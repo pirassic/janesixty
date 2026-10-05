@@ -30,6 +30,7 @@ void Synth::prepare (const Calibration& cal, double sampleRate, double a4Hz)
         v.configure (cal, sampleRate);
         v.setPanel (panel_);
     }
+    setCondition (Condition::demoUnit (cal));
     nextVoice_ = 0;
     physical_.clear();
     latched_.clear();
@@ -43,6 +44,14 @@ void Synth::prepare (const Calibration& cal, double sampleRate, double a4Hz)
     physical_.reserve (64);
     latched_.reserve (64);
     arpPattern_.reserve (64);
+}
+
+void Synth::setCondition (const Condition& c) noexcept
+{
+    condition_ = c;
+    if (cal_ == nullptr) return;
+    for (auto& v : voices_)
+        v.setTrimOffsetOct (c.vcfTrimOffsetOct);
 }
 
 int Synth::transposeSemis() const noexcept

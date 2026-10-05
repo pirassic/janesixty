@@ -27,6 +27,7 @@ private:
     void timerCallback() override;
     void refreshPresetList();
     void savePreset();
+    void openSettings();
 
     Jane60Processor& processor_;
 
@@ -37,7 +38,7 @@ private:
     DemoPlayer demo_;
 
     // Modern strip (also in reference space)
-    juce::TextButton prev_ { "<" }, next_ { ">" }, ab_ { "A" }, copy_ { "Copy" }, save_ { "Save" }, undo_ { "Undo" };
+    juce::TextButton prev_ { "<" }, next_ { ">" }, ab_ { "A" }, copy_ { "Copy" }, save_ { "Save" }, undo_ { "Undo" }, settings_ { "Settings" };
     juce::ComboBox presetBox_;
     juce::Label edited_, hint_;
     int lastShownIndex_ = -1;

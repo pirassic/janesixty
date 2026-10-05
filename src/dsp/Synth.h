@@ -3,6 +3,7 @@
 #pragma once
 
 #include "dsp/Calibration.h"
+#include "dsp/Condition.h"
 #include "dsp/PanelState.h"
 #include "dsp/chorus/ChorusBoard.h"
 #include "dsp/core/MasterClock.h"
@@ -38,6 +39,11 @@ public:
     /// Panel state is copied per block; the DSP never holds a pointer into plugin memory.
     void setPanel (const PanelState& p) noexcept { panel_ = p; }
 
+    /// Unit condition (trim and the like). prepare() starts from the calibration file's demo
+    /// unit; the plugin applies the user's choice. Cheap, may be called per block.
+    void setCondition (const Condition& c) noexcept;
+    [[nodiscard]] const Condition& condition() const noexcept { return condition_; }
+
     void render (float* left, float* right, int numSamples, const std::vector<MidiEvent>& events);
 
     [[nodiscard]] int activeVoices() const noexcept;
@@ -59,6 +65,7 @@ private:
     const Calibration* cal_ = nullptr;
     double sr_ = 48000.0;
     PanelState panel_;
+    Condition condition_;
 
     MasterClock clock_;
     PitchTable pitch_;

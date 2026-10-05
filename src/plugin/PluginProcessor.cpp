@@ -36,6 +36,16 @@ void Jane60Processor::prepareToPlay (double sampleRate, int)
 {
     synth_.setPanel (params::readPanel (apvts_));
     synth_.prepare (calibration_, sampleRate, 440.0);
+    applyCondition (true);
+}
+
+void Jane60Processor::applyCondition (bool force) noexcept
+{
+    const bool demo = demoTrim_.load();
+    if (! force && demo == appliedDemoTrim_)
+        return;
+    appliedDemoTrim_ = demo;
+    synth_.setCondition (demo ? Condition::demoUnit (calibration_) : Condition::serviceNotes());
 }
 
 bool Jane60Processor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -95,6 +105,7 @@ void Jane60Processor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
     std::stable_sort (events_.begin(), events_.end(), [] (const MidiEvent& a, const MidiEvent& b) { return a.sampleOffset < b.sampleOffset; });
 
     synth_.setPanel (params::readPanel (apvts_));
+    applyCondition (false);
 
     const int n = buffer.getNumSamples();
     float* left = buffer.getWritePointer (0);
@@ -127,6 +138,7 @@ void Jane60Processor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto state = apvts_.copyState();
     state.setProperty ("program", currentProgram_, nullptr);
+    state.setProperty ("demoTrim", demoTrim_.load(), nullptr);
     presets_.writeTo (state);
     if (auto xml = state.createXml())
         copyXmlToBinary (*xml, destData);
@@ -140,6 +152,7 @@ void Jane60Processor::setStateInformation (const void* data, int sizeInBytes)
         {
             auto tree = juce::ValueTree::fromXml (*xml);
             currentProgram_ = static_cast<int> (tree.getProperty ("program", 0));
+            demoTrim_.store (static_cast<bool> (tree.getProperty ("demoTrim", true)));
             apvts_.replaceState (tree);
             presets_.readFrom (tree);
         }

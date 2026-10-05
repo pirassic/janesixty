@@ -61,7 +61,7 @@ Every entry in `calibration/juno60.json` whose source starts with `assumed` (`Ca
 
 | key | value | uncertainty | effect if wrong | how to close |
 |---|---|---|---|---|
-| `vcf.trimOffsetOct` | 1.0 oct | +-0.3 oct (per-patch best offsets 0.64 to 1.25, several at the sweep limit) | every cutoff shifts; brightness of the whole bank | condition layer: user setting (Service Notes trim / demo unit); a bench sweep of a trimmed unit settles the manual side |
+| `vcf.trimOffsetOct` | 1.0 oct | +-0.3 oct (per-patch best offsets 0.64 to 1.25, several at the sweep limit) | every cutoff shifts; brightness of the whole bank | user setting done (Settings, "Match the factory demo unit", default on; stored in plugin state); a bench sweep of a trimmed unit would settle the manual side |
 | `env.timingCapNf` | 47 nF | +-50 % | none: loaded but unused; the ADSR time tables are measured and the capacitor would only matter for a component-level envelope | read it off schematic p.9 or drop the key |
 | `chorus.bbdClipVpp` (knee; source is a test condition, not `assumed`) and `chorus.bbdClipRoomV` | 6 Vp-p, 1.5 V | knee +-1.5 V, room +-1 V | overload shape of the wet path on six-voice chords above LEVEL +3; silent below (chords sit 10 dB under the knee at LEVEL 0) | MN3009 input THD sweep at the bias point, or Holters & Parker's measured curve |
 | `voicing.lowShelfDb` | +1.0 dB | +-1.5 dB (the recording's sub band agrees within the method's noise with it in, listening notes 2026-10-05) | low end 150 Hz down | none from the demo; a line recording of a known unit, or zero it as a user voicing |
