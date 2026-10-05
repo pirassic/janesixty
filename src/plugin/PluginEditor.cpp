@@ -3,6 +3,8 @@
 #include "PluginEditor.h"
 #include "ui/PanelLayout.h"
 
+#include <cmath>
+
 namespace jane60
 {
 
@@ -160,28 +162,29 @@ void Jane60Editor::showSettingsMenu (juce::Component* target, juce::StandaloneFi
     juce::PopupMenu m;
     m.addSectionHeader ("Unit");
     m.addItem (100, "Match the factory demo unit (VCF trim one octave above the Service Notes)", true, processor_.demoTrim());
+    auto is = [] (double a, double b) { return std::abs (a - b) < 1e-9; };
     {
         const double s = processor_.voiceSpread();
         juce::PopupMenu sub;
-        sub.addItem (110, "Off: six identical voices", true, s == 0.0);
-        sub.addItem (111, "Service Notes tolerances", true, s == 1.0);
-        sub.addItem (112, "Twice the tolerances (worn unit)", true, s == 2.0);
+        sub.addItem (110, "Off: six identical voices", true, is (s, 0.0));
+        sub.addItem (111, "Service Notes tolerances", true, is (s, 1.0));
+        sub.addItem (112, "Twice the tolerances (worn unit)", true, is (s, 2.0));
         m.addSubMenu ("Voice spread", sub);
     }
     {
         const double d = processor_.vcfDriveDb();
         juce::PopupMenu sub;
-        sub.addItem (120, "-6 dB: cleaner filter", true, d == -6.0);
-        sub.addItem (121, "As calibrated (schematic reading)", true, d == 0.0);
-        sub.addItem (122, "+6 dB: more filter growl", true, d == 6.0);
+        sub.addItem (120, "-6 dB: cleaner filter", true, is (d, -6.0));
+        sub.addItem (121, "As calibrated (schematic reading)", true, is (d, 0.0));
+        sub.addItem (122, "+6 dB: more filter growl", true, is (d, 6.0));
         m.addSubMenu ("Filter drive", sub);
     }
     {
         const double n = processor_.chorusNoiseDb();
         juce::PopupMenu sub;
         sub.addItem (130, "Off", true, n <= -90.0);
-        sub.addItem (131, "As calibrated", true, n == 0.0);
-        sub.addItem (132, "Aged BBDs (+10 dB)", true, n == 10.0);
+        sub.addItem (131, "As calibrated", true, is (n, 0.0));
+        sub.addItem (132, "Aged BBDs (+10 dB)", true, is (n, 10.0));
         m.addSubMenu ("Chorus noise", sub);
     }
     if (window != nullptr)

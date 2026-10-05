@@ -5,6 +5,7 @@
 #include "PluginEditor.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace jane60
 {
@@ -47,9 +48,10 @@ void Jane60Processor::applyCondition (bool force) noexcept
     const double noiseDb = chorusNoiseDb_.load();
     c.chorusNoise = noiseDb > -90.0;
     c.chorusNoiseDb = c.chorusNoise ? noiseDb : 0.0;
+    auto same = [] (double a, double b) { return std::abs (a - b) < 1e-9; };
     if (! force && conditionApplied_
-        && c.vcfTrimOffsetOct == applied_.vcfTrimOffsetOct && c.voiceSpread == applied_.voiceSpread
-        && c.vcfDriveDb == applied_.vcfDriveDb && c.chorusNoise == applied_.chorusNoise && c.chorusNoiseDb == applied_.chorusNoiseDb)
+        && same (c.vcfTrimOffsetOct, applied_.vcfTrimOffsetOct) && same (c.voiceSpread, applied_.voiceSpread)
+        && same (c.vcfDriveDb, applied_.vcfDriveDb) && c.chorusNoise == applied_.chorusNoise && same (c.chorusNoiseDb, applied_.chorusNoiseDb))
         return;
     applied_ = c;
     conditionApplied_ = true;
