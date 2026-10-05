@@ -1,36 +1,50 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include "PluginEditor.h"
+#include "ui/PanelLayout.h"
 
 namespace jane60
 {
 
+using namespace ui::layout;
+
 Jane60Editor::Jane60Editor (Jane60Processor& p)
     : AudioProcessorEditor (&p),
       processor_ (p),
-      generic_ (p),
+      panel_ (p),
       keyboard_ (p.keyboardState(), juce::MidiKeyboardComponent::horizontalKeyboard)
 {
-    addAndMakeVisible (generic_);
-    keyboard_.setAvailableRange (36, 96);
+    content_.setSize (refWidth, refHeight);
+    addAndMakeVisible (content_);
+
+    panel_.setBounds (0, 0, refWidth, stripY);
+    content_.addAndMakeVisible (panel_);
+
+    keyboard_.setAvailableRange (36, 96);              // C2..C7, 61 keys
     keyboard_.setOctaveForMiddleC (4);
-    keyboard_.setKeyWidth (22.0f);
+    keyboard_.setKeyWidth (static_cast<float> (keysW) / 36.0f);
+    keyboard_.setScrollButtonsVisible (false);
+    keyboard_.setBounds (keysX, keysY, keysW, keysH);
     keyboard_.setWantsKeyboardFocus (true);
-    addAndMakeVisible (keyboard_);
+    keyboard_.setColour (juce::MidiKeyboardComponent::whiteNoteColourId, juce::Colour (0xfff3f1ea));
+    keyboard_.setColour (juce::MidiKeyboardComponent::blackNoteColourId, juce::Colour (0xff141414));
+    keyboard_.setColour (juce::MidiKeyboardComponent::keySeparatorLineColourId, juce::Colour (0xff6a6a6a));
+    keyboard_.setColour (juce::MidiKeyboardComponent::keyDownOverlayColourId, juce::Colour (0x66ff9f40));
+    keyboard_.setColour (juce::MidiKeyboardComponent::mouseOverKeyOverlayColourId, juce::Colour (0x22ffffff));
+    content_.addAndMakeVisible (keyboard_);
 
-    hint_.setText ("Click the keyboard, then play A S D F G H J K (W E T Y U for sharps); Z / X shift octaves.",
-                   juce::dontSendNotification);
-    hint_.setJustificationType (juce::Justification::centred);
-    hint_.setFont (juce::FontOptions (12.0f));
-    addAndMakeVisible (hint_);
-
-    // Preset bar
+    // Modern strip
     for (auto* b : { &prev_, &next_, &ab_, &copy_, &save_, &undo_ })
-        addAndMakeVisible (b);
-    addAndMakeVisible (presetBox_);
-    addAndMakeVisible (edited_);
+        content_.addAndMakeVisible (b);
+    content_.addAndMakeVisible (presetBox_);
+    content_.addAndMakeVisible (edited_);
+    content_.addAndMakeVisible (hint_);
     edited_.setJustificationType (juce::Justification::centredLeft);
     edited_.setFont (juce::FontOptions (12.0f));
+    hint_.setText ("Computer keys: A S D F G H J K (W E T Y U sharps), Z / X octave. Shift + bank 1 / 2 = bank 6 / 7.", juce::dontSendNotification);
+    hint_.setJustificationType (juce::Justification::centredRight);
+    hint_.setFont (juce::FontOptions (11.0f));
+    hint_.setColour (juce::Label::textColourId, juce::Colour (0xff9a9a9a));
 
     prev_.onClick = [this] { processor_.presets().loadPrevious(); refreshPresetList(); };
     next_.onClick = [this] { processor_.presets().loadNext(); refreshPresetList(); };
@@ -47,12 +61,32 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
             refreshPresetList();
         }
     };
+
+    {
+        auto strip = juce::Rectangle<int> (panelX, stripY, panelW, stripH).reduced (0, 4);
+        prev_.setBounds (strip.removeFromLeft (34));
+        next_.setBounds (strip.removeFromLeft (34));
+        strip.removeFromLeft (8);
+        undo_.setBounds (strip.removeFromRight (60));
+        strip.removeFromRight (4);
+        save_.setBounds (strip.removeFromRight (60));
+        strip.removeFromRight (4);
+        copy_.setBounds (strip.removeFromRight (60));
+        strip.removeFromRight (4);
+        ab_.setBounds (strip.removeFromRight (44));
+        strip.removeFromRight (8);
+        hint_.setBounds (strip.removeFromRight (620));
+        edited_.setBounds (strip.removeFromRight (70));
+        presetBox_.setBounds (strip);
+    }
+
     refreshPresetList();
     startTimerHz (4);
 
     setResizable (true, true);
-    setResizeLimits (560, 520, 1600, 1400);
-    setSize (760, 800);
+    getConstrainer()->setFixedAspectRatio (static_cast<double> (refWidth) / static_cast<double> (refHeight));
+    setResizeLimits (950, 350, refWidth * 2, refHeight * 2);
+    setSize (1330, 490);
 }
 
 Jane60Editor::~Jane60Editor() = default;
@@ -96,9 +130,7 @@ void Jane60Editor::savePreset()
     {
         if (result == 1)
         {
-            const auto name = w->getTextEditorContents ("name");
-            const auto bank = w->getTextEditorContents ("bank");
-            const auto r = processor_.presets().saveAs (name, bank, {});
+            const auto r = processor_.presets().saveAs (w->getTextEditorContents ("name"), w->getTextEditorContents ("bank"), {});
             if (r.failed())
                 juce::AlertWindow::showMessageBoxAsync (juce::MessageBoxIconType::WarningIcon, "Save failed", r.getErrorMessage());
             refreshPresetList();
@@ -108,30 +140,13 @@ void Jane60Editor::savePreset()
 
 void Jane60Editor::paint (juce::Graphics& g)
 {
-    g.fillAll (juce::Colour (0xff202020));
+    g.fillAll (juce::Colour (0xff101010));
 }
 
 void Jane60Editor::resized()
 {
-    auto area = getLocalBounds();
-    auto bar = area.removeFromTop (34).reduced (8, 4);
-    prev_.setBounds (bar.removeFromLeft (30));
-    next_.setBounds (bar.removeFromLeft (30));
-    bar.removeFromLeft (6);
-    undo_.setBounds (bar.removeFromRight (56));
-    bar.removeFromRight (4);
-    save_.setBounds (bar.removeFromRight (56));
-    bar.removeFromRight (4);
-    copy_.setBounds (bar.removeFromRight (56));
-    bar.removeFromRight (4);
-    ab_.setBounds (bar.removeFromRight (44));
-    bar.removeFromRight (6);
-    edited_.setBounds (bar.removeFromRight (60));
-    presetBox_.setBounds (bar);
-
-    keyboard_.setBounds (area.removeFromBottom (90).reduced (8, 4));
-    hint_.setBounds (area.removeFromBottom (20));
-    generic_.setBounds (area);
+    const float scale = static_cast<float> (getWidth()) / static_cast<float> (refWidth);
+    content_.setTransform (juce::AffineTransform::scale (scale));
 }
 
 } // namespace jane60

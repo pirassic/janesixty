@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Interim editor until the panel UI (phase 3): a preset bar, the host's generic
-// parameter list, and an on-screen keyboard that also takes computer-keyboard input.
+// The editor: panel + bender panel + 61-key keyboard, all in reference
+// coordinates scaled to the window, with a modern strip below.
 #pragma once
 
 #include <JuceHeader.h>
 
 #include "PluginProcessor.h"
+#include "ui/PanelComponent.h"
 
 namespace jane60
 {
@@ -26,13 +27,16 @@ private:
     void savePreset();
 
     Jane60Processor& processor_;
-    juce::GenericAudioProcessorEditor generic_;
-    juce::MidiKeyboardComponent keyboard_;
-    juce::Label hint_;
 
-    juce::TextButton prev_ { "<" }, next_ { ">" }, ab_ { "A/B" }, copy_ { "Copy" }, save_ { "Save" }, undo_ { "Undo" };
+    // Everything in reference space lives inside content_, which is scaled as a whole.
+    juce::Component content_;
+    ui::PanelComponent panel_;
+    juce::MidiKeyboardComponent keyboard_;
+
+    // Modern strip (also in reference space)
+    juce::TextButton prev_ { "<" }, next_ { ">" }, ab_ { "A" }, copy_ { "Copy" }, save_ { "Save" }, undo_ { "Undo" };
     juce::ComboBox presetBox_;
-    juce::Label edited_;
+    juce::Label edited_, hint_;
     int lastShownIndex_ = -1;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Jane60Editor)
