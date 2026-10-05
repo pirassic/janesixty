@@ -2,6 +2,7 @@
 
 #include "PluginProcessor.h"
 #include "Parameters.h"
+#include "PluginEditor.h"
 
 namespace jane60
 {
@@ -44,6 +45,9 @@ bool Jane60Processor::isBusesLayoutSupported (const BusesLayout& layouts) const
 void Jane60Processor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ScopedNoDenormals noDenormals;
+
+    // Merge the editor's on-screen / computer keyboard into the host MIDI.
+    keyboardState_.processNextMidiBuffer (midi, 0, buffer.getNumSamples(), true);
 
     events_.clear();
     for (const auto meta : midi)
@@ -92,8 +96,7 @@ void Jane60Processor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
 
 juce::AudioProcessorEditor* Jane60Processor::createEditor()
 {
-    // Phase 1: the host's generic parameter view. The panel UI arrives in phase 3.
-    return new juce::GenericAudioProcessorEditor (*this);
+    return new Jane60Editor (*this);
 }
 
 void Jane60Processor::setCurrentProgram (int index)

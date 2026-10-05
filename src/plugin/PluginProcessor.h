@@ -47,6 +47,7 @@ public:
     const Calibration& calibration() const noexcept { return calibration_; }
     PresetManager& presets() noexcept { return presets_; }
     juce::UndoManager& undoManager() noexcept { return undo_; }
+    juce::MidiKeyboardState& keyboardState() noexcept { return keyboardState_; }
 
 private:
     static Calibration loadEmbeddedCalibration();
@@ -58,6 +59,7 @@ private:
     juce::AudioProcessorValueTreeState apvts_;
     PresetManager presets_;
     Synth synth_;
+    juce::MidiKeyboardState keyboardState_;
     std::vector<MidiEvent> events_;
     int currentProgram_ = 0;
 

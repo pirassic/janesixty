@@ -87,7 +87,8 @@ if(JANE60_BUILD_PLUGIN)
     target_sources(Jane60 PRIVATE
         src/plugin/PluginProcessor.cpp
         src/plugin/Parameters.cpp
-        src/plugin/PresetManager.cpp)
+        src/plugin/PresetManager.cpp
+        src/plugin/PluginEditor.cpp)
 
     juce_add_binary_data(Jane60Data
         SOURCES calibration/juno60.json calibration/factory_patches.csv)
