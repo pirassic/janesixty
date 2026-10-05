@@ -13,14 +13,19 @@ Notes p.9 (R14 10 k, R5 47 k, R3 100 k, R1 1.5 k) run as drawn.
 
 Modes:
   model    loop sum as the plugin forms it: x1 = in (1 + comp k) - k y4
-  network  the p.9 resistor network with the BA662 as a transconductance,
-           polarity -1 (pin 2 inverting) or +1
+  network  the p.9 resistor network with the BA662 as a differential
+           transconductance: compensation leg R5 47 k into pin 3 (+) with R2
+           1.5 k, feedback leg R3 100 k into pin 2 (-) with R1 1.5 k, output
+           current into node A (R14 10 k from the mixer, R7 68 k / R6 560 load).
+           Its resonance axis is normalised by the simulated oscillation
+           threshold: k = 4 * GM / GM_osc.
 
 Outputs (CSV in --out):
   response.csv   mode=model, k=0, FC=1 kHz: gain in dB at 100, 1k, 4k, 8k Hz
   selfosc.csv    mode=model, FC=248*shift, k=4.05: oscillation frequency and Vp-p
   harmonics.csv  mode=model, k=0, FC=2 kHz, 12 Vp-p 220 Hz sine: H2..H5 in dB re H1
-  passband.csv   gain at 100 Hz vs k (model) and vs GM (network, both polarities)
+  passband.csv   gain at 100 Hz vs k (model) and vs normalised k (network)
+  network.csv    the network's oscillation threshold GM_osc and its self-oscillation at k 4.05
 """
 import argparse, csv, math, os, subprocess, sys, tempfile
 import numpy as np
@@ -38,7 +43,7 @@ def stages(src):
         prev = f"y{n}"
     return "\n".join(s)
 
-def netlist(mode, fc, k=0.0, comp=0.308, gm=0.0, pol=-1, amp=0.1, freq=100.0, analysis=""):
+def netlist(mode, fc, k=0.0, comp=0.308, gm=0.0, amp=0.1, freq=100.0, analysis=""):
     i0 = 2 * math.pi * fc * C * VT2 / A
     head = f"""* Jane-Sixty IR3109 reference ({mode})
 .param VT2={VT2} ATT={A} CSTG={C} I0={i0}
@@ -55,12 +60,14 @@ R14 mix na 10k
 R7 na s1 68k
 R6 s1 0 560
 Rkick kick na 100k
-* BA662 input node n: R5 47 k from the mixer, R3 100 k from the filter output, R1 1.5 k to ground
-R5 mix n 47k
-R3 y4 n 100k
-R1 n 0 1.5k
-* BA662 output current into node a; small-signal gm = GM, tanh limited at 2Vt
-Bres 0 na I = {pol}*{gm}*VT2*tanh(v(n)/VT2)
+* BA662 (+) input: R5 47 k from the mixer side of R14, R2 1.5 k to ground (compensation)
+R5 mix np 47k
+R2 np 0 1.5k
+* BA662 (-) input: R3 100 k from the filter output, R1 1.5 k to ground (feedback)
+R3 y4 nm 100k
+R1 nm 0 1.5k
+* BA662 output current into node A; small-signal gm = GM, tanh limited at 2Vt
+Bres 0 na I = {gm}*VT2*tanh((v(np)-v(nm))/VT2)
 """ + stages("na")
     return head + body + "\n" + analysis + "\n.end\n"
 
@@ -157,14 +164,29 @@ def main():
     rows = []
     for k in [0.0, 1.0, 2.0, 3.0, 3.9]:
         rows.append(["model", f"{k:.2f}", f"{ac_gain_db(wd, 'model', 1000.0, [100.0], k=k)[0]:.3f}"])
-    # Network as drawn: sweep GM; k is not defined there, so report gain vs GM for both polarities.
-    for pol in (-1, 1):
-        for gm in [0.0, 2e-3, 5e-3, 1e-2, 2e-2, 3e-2]:
-            try:
-                gdb = ac_gain_db(wd, "network", 1000.0, [100.0], gm=gm, pol=pol)[0]
-            except Exception:
-                gdb = float("nan")
-            rows.append([f"network pol{pol:+d}", f"{gm:.4f}", f"{gdb:.3f}"])
+
+    # Network as drawn: find the oscillation threshold GM_osc by bisection on transient growth,
+    # then report the passband on the normalised axis k = 4 GM / GM_osc.
+    def grows(gm):
+        t, y = tran(wd, "network", 1000.0, tstop=0.06, tstep=1.0 / 192000, gm=gm, amp=0.0, freq=100.0)
+        a = np.abs(y - y.mean())
+        q = len(a) // 4
+        early, late = a[q:2 * q].max(), a[3 * q:].max()
+        return late > early * 1.5
+    lo, hi = 0.0, 0.1
+    for _ in range(14):
+        mid = 0.5 * (lo + hi)
+        if grows(mid): hi = mid
+        else: lo = mid
+    gm_osc = 0.5 * (lo + hi)
+    for kn in [0.0, 1.0, 2.0, 3.0, 3.9]:
+        gm = gm_osc * kn / 4.0
+        rows.append(["network", f"{kn:.2f}", f"{ac_gain_db(wd, 'network', 1000.0, [100.0], gm=gm)[0]:.3f}"])
+    t, y = tran(wd, "network", fc, tstop=3.0, tstep=1.0 / 96000, gm=gm_osc * args.kmax / 4.0, amp=0.0, freq=248.0)
+    sel = t > 2.0
+    with open(os.path.join(args.out, "network.csv"), "w", newline="") as f:
+        w = csv.writer(f); w.writerow(["gmOsc", "cornerHz", "k", "oscHz", "vpp"])
+        w.writerow([f"{gm_osc:.6f}", f"{fc:.3f}", args.kmax, f"{dominant(t[sel], y[sel], 150.0, 400.0):.3f}", f"{float(y[sel].max() - y[sel].min()):.4f}"])
     with open(os.path.join(args.out, "passband.csv"), "w", newline="") as f:
         w = csv.writer(f); w.writerow(["mode", "k_or_gm", "gain100HzDb"]); w.writerows(rows)
     print("wrote", args.out)

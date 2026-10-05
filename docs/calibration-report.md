@@ -22,7 +22,8 @@ Source tags (from `calibration/juno60.json`): `service-notes`, `owners-manual`, 
 | Overload shape | linear to the knee, tanh over 1.5 V | assumed |
 
 ### Open questions carried
-- The p.9 resonance network read literally (R5 47 k from the mixer and R3 100 k from the output into the same BA662 input, R1 1.5 k to ground) gives an input-to-feedback ratio of about 2.1, far from the 0.308 compensation that reproduces the known ~7 dB passband loss. Either the drawing hides an inversion or the mixer-side tap is not the mixer output. The `network` rows in the simulation report show what the drawn network does.
+- Resonance network, resolved on a second reading (owner's crop and an external findings note, 2026-10-05): the 47 k compensation leg enters BA662 pin 3 (+) with R2 1.5 k to ground, the 100 k feedback leg enters pin 2 (-) with R1 1.5 k. Input adds, feedback subtracts. The `network` rows in the simulation report now run this differential form on a resonance axis normalised by its own simulated oscillation threshold, so the drawn compensation's passband curve can be read against the plugin's 0.308 coefficient. That coefficient stays `plugin-derived`: the ~7 dB loss it was fitted to has no primary measurement behind it.
+- The external findings note also quotes R4 = 12 k and R7 / R11 = 33 k; the schematic shows R14 10 k and 68 k stage resistors, so its derived 0.37 coefficient is not used.
 - Voice mixer resistor values (saw / pulse / sub / noise legs) still unread; the mixer ratios remain plugin-derived.
 
 ## Assumed values

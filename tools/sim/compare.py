@@ -54,7 +54,11 @@ def main():
     for x in r:
         pd = d.get(float(x["k_or_gm"])) if x["mode"] == "model" else None
         lines.append(f"| {x['mode']} | {x['k_or_gm']} | {float(x['gain100HzDb']):.2f} | {'' if pd is None else f'{pd:.2f}'} |")
-    lines += ["", "The `network` rows run the p.9 resistor network as drawn with the BA662 as a plain transconductance, for both input polarities; they answer whether the drawn network reproduces the ~7 dB passband loss at full resonance that the `model` compensation (coefficient 0.308) gives.", ""]
+    net = load(os.path.join(a.ref, "network.csv"))
+    if net:
+        n = net[0]
+        lines += ["", f"Network as drawn (differential BA662: 47 k compensation into pin 3, 100 k feedback into pin 2): oscillation threshold GM_osc = {float(n['gmOsc']) * 1e3:.3f} mA/V; at k {n['k']} and corner {float(n['cornerHz']):.1f} Hz it oscillates at {float(n['oscHz']):.2f} Hz, {float(n['vpp']):.3f} Vp-p (plugin output units at the filter output node)."]
+    lines += ["", "The `network` rows are the p.9 resistor network run as drawn, on a resonance axis normalised by its own simulated oscillation threshold. They say what the drawn compensation does to the passband; the `model` rows use the plugin-derived 0.308 coefficient, which was fitted to a ~7 dB loss at full resonance whose hardware provenance is not established.", ""]
     lines.append("**Result: all within tolerance.**" if ok else "**Result: at least one measurement outside tolerance (!).**")
     with open(a.out, "w") as f:
         f.write("\n".join(lines) + "\n")
