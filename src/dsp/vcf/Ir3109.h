@@ -6,8 +6,10 @@
 // Model: each stage is dy/dt = wc * tanh(x - y) in units of 2*Vt, discretised with
 // the trapezoidal rule (y = s + g * tanh(x - y), s' = 2y - s) and solved per stage
 // with Newton steps. The global feedback loop (x1 = in - k * y4) is solved by
-// fixed-point iteration from the previous output. Runs at 2x the host rate with a
-// simple 2x up/down path; a half-band pair replaces it in phase 4.
+// fixed-point iteration from the previous output. Runs at 2x the host rate: the
+// input is held for both sub-steps and the second sub-step is the output (the
+// earlier linear-interpolate / average pair cost 3 dB at 15 kHz and made the top
+// end sound closed); a half-band pair replaces it in phase 4.
 #pragma once
 
 #include "dsp/Calibration.h"
@@ -32,7 +34,6 @@ public:
     {
         for (auto& s : s_) s = 0.0;
         y4_ = 0.0;
-        prevIn_ = 0.0;
     }
 
     /// cutoffHz: cutoff of each one-pole stage. k: feedback gain, 4 = self-oscillation threshold.
@@ -49,11 +50,8 @@ public:
     /// Input in volts at the mixer output; output in volts, referred back to the input scale.
     double process (double inVolts) noexcept
     {
-        const double mid = 0.5 * (prevIn_ + inVolts);
-        prevIn_ = inVolts;
-        const double y0 = tickInternal (mid);
-        const double y1 = tickInternal (inVolts);
-        return 0.5 * (y0 + y1);
+        tickInternal (inVolts);
+        return tickInternal (inVolts);
     }
 
     [[nodiscard]] double feedbackGain() const noexcept { return k_; }
@@ -105,7 +103,6 @@ private:
     double k_ = 0.0;
     double s_[4] {};
     double y4_ = 0.0;
-    double prevIn_ = 0.0;
 };
 
 } // namespace jane60

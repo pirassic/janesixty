@@ -123,6 +123,14 @@ struct Calibration
         double wetGain = 1.0;
     } chorus;
 
+    /// Output voicing that has no circuit source yet. Provisional: fitted by ear against
+    /// the factory demo recordings and meant to be zeroed once a measurement replaces it.
+    struct Voicing
+    {
+        double lowShelfDb = 0.0;             ///< gain below lowShelfHz, after the chorus
+        double lowShelfHz = 150.0;
+    } voicing;
+
     struct Firmware
     {
         int sliderBits = 8;                  ///< all 16 sliders read by an 8-bit ADC

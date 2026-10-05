@@ -14,7 +14,6 @@ PanelComponent::PanelComponent (Jane60Processor& p)
 {
     setSize (refWidth, stripY);
     buildMainPanel();
-    buildMemory();
     buildBenderPanel();
     updateDisplay();
     startTimerHz (8);
@@ -23,23 +22,28 @@ PanelComponent::PanelComponent (Jane60Processor& p)
 PanelComponent::~PanelComponent() = default;
 
 // ---------------------------------------------------------------------------
+void PanelComponent::addLegend (const juce::String& text, juce::Rectangle<int> area, float size, int lines)
+{
+    legends_.push_back ({ text, area, size, lines });
+}
+
 void PanelComponent::addSlider (const char* paramId, int centreX, const juce::String& legend, PanelSlider::Scale scale)
 {
     auto s = std::make_unique<PanelSlider> (scale);
-    s->setLegend (legend);
     s->setBounds (slider (centreX));
     s->setTitle (legend);
     addAndMakeVisible (*s);
     sliderAttachments_.push_back (std::make_unique<Apvts::SliderAttachment> (state_, paramId, *s));
     sliders_.push_back (std::move (s));
+    addLegend (legend, sliderLegend (centreX), fontLegend);
 }
 
-void PanelComponent::addSwitch (const char* paramId, int centreX, int topY, juce::StringArray legends, const juce::String& title)
+void PanelComponent::addSwitch (const char* paramId, int centreX, int width, juce::StringArray legends, const juce::String& title)
 {
     auto sw = std::make_unique<SlideSwitch> (legends);
     const int n = legends.size();
-    sw->setBounds (vswitch (centreX, topY, n));
-    sw->setTitle (title.isNotEmpty() ? title : paramId);
+    sw->setBounds (vswitch (centreX, width, n));
+    sw->setTitle (title);
     addAndMakeVisible (*sw);
     auto* raw = sw.get();
     auto* param = state_.getParameter (paramId);
@@ -50,38 +54,21 @@ void PanelComponent::addSwitch (const char* paramId, int centreX, int topY, juce
     auto* attRaw = att.get();
     sw->onChange = [attRaw] (int pos) { attRaw->setValueAsCompleteGesture (static_cast<float> (pos)); };
     att->sendInitialUpdate();
-    if (title.isNotEmpty())
-    {
-        auto l = std::make_unique<juce::Label> ();
-        l->setText (title, juce::dontSendNotification);
-        l->setFont (juce::FontOptions (11.0f, juce::Font::bold));
-        l->setColour (juce::Label::textColourId, colours::legend);
-        l->setJustificationType (juce::Justification::centred);
-        l->setBounds (centreX - 40, topY - 18, 80, 16);
-        addAndMakeVisible (*l);
-        labels_.push_back (std::move (l));
-    }
+    addLegend (title, switchLegend (centreX), fontLegend);
     switchAttachments_.push_back (std::move (att));
     switches_.push_back (std::move (sw));
 }
 
-LedButton* PanelComponent::addToggle (const char* paramId, int centreX, int topY, const juce::String& legend, juce::Colour cap)
+LedButton* PanelComponent::addToggle (const char* paramId, int centreX, const juce::String& legend, juce::Colour cap)
 {
     auto b = std::make_unique<LedButton> (legend, cap, true, false);
-    b->setBounds (button (centreX, topY));
+    b->setBounds (button (centreX));
     b->setTitle (legend);
     addAndMakeVisible (*b);
     auto* raw = b.get();
     if (paramId != nullptr)
         buttonAttachments_.push_back (std::make_unique<Apvts::ButtonAttachment> (state_, paramId, *b));
-    auto l = std::make_unique<juce::Label> ();
-    l->setText (legend, juce::dontSendNotification);
-    l->setFont (juce::FontOptions (10.5f, juce::Font::bold));
-    l->setColour (juce::Label::textColourId, colours::legend);
-    l->setJustificationType (juce::Justification::centred);
-    l->setBounds (centreX - 40, topY - 16, 80, 14);
-    addAndMakeVisible (*l);
-    labels_.push_back (std::move (l));
+    addLegend (legend, buttonLegend (centreX, btnCol + 16), fontLegend);
     buttons_.push_back (std::move (b));
     return raw;
 }
@@ -89,107 +76,124 @@ LedButton* PanelComponent::addToggle (const char* paramId, int centreX, int topY
 // ---------------------------------------------------------------------------
 void PanelComponent::buildMainPanel()
 {
-    const int sw = bodyY + 60; // switch top
-
-    // POWER (decorative in software) + KEY TRANSPOSE + HOLD
-    power_ = std::make_unique<SlideSwitch> (juce::StringArray { "OFF", "ON" });
-    power_->setBounds (vswitch (panelX + 30, bodyY + 90, 2));
-    power_->setPosition (1, juce::dontSendNotification);
-    power_->setInterceptsMouseClicks (false, false);
-    addAndMakeVisible (*power_);
-
-    // KEY TRANSPOSE is a choice parameter; the panel button cycles C..B..C+ on click,
-    // and the hardware gesture (hold + play a key) comes with the keyboard wiring.
+    // Columns are laid out left to right; each section records its x range for paint().
+    int x = panelX;
+    auto section = [&] (const juce::String& title, int band, auto&& body)
     {
+        const int x0 = x;
+        x += sectionPad;
+        body();
+        x += sectionPad;
+        sections_.push_back ({ title, x0, x, band });
+    };
+    auto col = [&] (int w) { const int c = x + w / 2; x += w; return c; };
+    constexpr int creamBand = 0, blueBand = 1, redBand = 2;
+    constexpr int switchW = 58, narrowSwitchW = 44;
+
+    section ("POWER", creamBand, [&]
+    {
+        const int c = col (60);
+        power_ = std::make_unique<SlideSwitch> (juce::StringArray { "OFF", "ON" });
+        power_->setBounds (vswitch (c, switchW, 2));
+        power_->setPosition (1, juce::dontSendNotification);
+        power_->setInterceptsMouseClicks (false, false);
+        addAndMakeVisible (*power_);
+        addLegend ("POWER", switchLegend (c), fontLegend);
+    });
+
+    section ("", creamBand, [&]
+    {
+        // KEY TRANSPOSE: a tap toggles C and G; the hardware gesture (hold + key) comes with MIDI.
+        const int c = col (90);
         auto b = std::make_unique<LedButton> ("KEY TRANSPOSE", colours::buttonCream, true, true);
-        b->setBounds (button (panelX + 110, waveBtnY));
-        auto* raw = b.get();
-        b->onClick = [this, raw]
+        b->setBounds (button (c));
+        b->setTitle ("Key Transpose");
+        keyTranspose_ = b.get();
+        b->onClick = [this]
         {
             auto* param = state_.getParameter (params::keyTranspose);
             const int cur = static_cast<int> (std::lround (param->convertFrom0to1 (param->getValue())));
-            const int next = cur == 0 ? 7 : 0; // tap: toggle between C and G (fifth) as a quick demo; the keyboard gesture sets any key
+            const int next = cur == 0 ? 7 : 0;
             param->setValueNotifyingHost (param->convertTo0to1 (static_cast<float> (next)));
-            raw->setLedOn (next != 0);
         };
         addAndMakeVisible (*b);
-        auto l = std::make_unique<juce::Label> ();
-        l->setText ("KEY\nTRANSPOSE", juce::dontSendNotification);
-        l->setFont (juce::FontOptions (10.5f, juce::Font::bold));
-        l->setColour (juce::Label::textColourId, colours::legend);
-        l->setJustificationType (juce::Justification::centred);
-        l->setBounds (panelX + 110 - 44, waveBtnY - 30, 88, 28);
-        addAndMakeVisible (*l);
-        labels_.push_back (std::move (l));
         buttons_.push_back (std::move (b));
-    }
-    addToggle (params::hold, panelX + 160, waveBtnY, "HOLD", colours::buttonYellow);
+        addLegend ("KEY\nTRANSPOSE", buttonLegend (c, 90), fontLegend);
+        addToggle (params::hold, col (48), "HOLD", colours::buttonYellow);
+    });
 
-    // ARPEGGIO
-    addToggle (params::arpOn, panelX + 225, waveBtnY, "ON/OFF", colours::buttonOrange);
-    addSwitch (params::arpMode, panelX + 268, sw, { "DOWN", "UP & DOWN", "UP" }, "MODE");
-    addSwitch (params::arpRange, panelX + 312, sw, { "1", "2", "3" }, "RANGE");
-    addSlider (params::arpRate, panelX + 352, "RATE");
+    section ("ARPEGGIO", blueBand, [&]
+    {
+        addToggle (params::arpOn, col (48), "ON/OFF", colours::buttonOrange);
+        addSwitch (params::arpMode, col (switchW), switchW, { "DOWN", "U/D", "UP" }, "MODE");
+        addSwitch (params::arpRange, col (narrowSwitchW), narrowSwitchW, { "1", "2", "3" }, "RANGE");
+        addSlider (params::arpRate, col (sliderCol), "RATE");
+    });
 
-    // LFO
-    addSlider (params::lfoRate, panelX + 397, "RATE");
-    addSlider (params::lfoDelay, panelX + 432, "DELAY TIME");
-    addSwitch (params::lfoTrig, panelX + 455, sw, { "AUTO", "MAN" }, "TRIG MODE");
+    section ("LFO", redBand, [&]
+    {
+        addSlider (params::lfoRate, col (sliderCol), "RATE");
+        addSlider (params::lfoDelay, col (sliderCol), "DELAY\nTIME");
+        addSwitch (params::lfoTrig, col (switchW), switchW, { "AUTO", "MAN" }, "TRIG");
+    });
 
-    // DCO
-    addSlider (params::dcoLfo, panelX + 485, "LFO");
-    addSlider (params::dcoPwm, panelX + 520, "PWM");
-    addSwitch (params::pwmMode, panelX + 548, sw, { "LFO", "MANUAL", "ENV" }, "PWM MODE");
-    addToggle (params::pulse, panelX + 600, waveBtnY, juce::String::fromUTF8 ("⊓"), colours::buttonWhite);
-    addToggle (params::saw, panelX + 640, waveBtnY, juce::String::fromUTF8 ("╱"), colours::buttonYellow);
-    addToggle (params::sub, panelX + 680, waveBtnY, "SUB", colours::buttonOrange);
-    addSlider (params::subLevel, panelX + 722, "SUB OSC");
-    addSlider (params::noise, panelX + 757, "NOISE");
+    section ("DCO", redBand, [&]
+    {
+        addSlider (params::dcoLfo, col (sliderCol), "LFO");
+        addSlider (params::dcoPwm, col (sliderCol), "PWM");
+        addSwitch (params::pwmMode, col (switchW), switchW, { "LFO", "MAN", "ENV" }, "PWM\nMODE");
+        addToggle (params::pulse, col (btnCol), juce::String::fromUTF8 ("\xe2\x8a\x93"), colours::buttonWhite);   // pulse glyph
+        addToggle (params::saw, col (btnCol), juce::String::fromUTF8 ("\xe2\x95\xb1"), colours::buttonYellow);    // ramp glyph
+        addToggle (params::sub, col (btnCol), "SUB", colours::buttonOrange);
+        addSlider (params::subLevel, col (sliderCol), "SUB\nOSC");
+        addSlider (params::noise, col (sliderCol), "NOISE");
+    });
 
-    // HPF
-    addSlider (params::hpf, panelX + 802, "FREQ", PanelSlider::Scale::hpfDetents);
+    section ("HPF", redBand, [&]
+    {
+        addSlider (params::hpf, col (sliderCol + 4), "FREQ", PanelSlider::Scale::hpfDetents);
+    });
 
-    // VCF
-    addSlider (params::vcfFreq, panelX + 852, "FREQ");
-    addSlider (params::vcfRes, panelX + 887, "RES");
-    addSwitch (params::vcfPolarity, panelX + 922, sw, { "NORMAL", "INV" }, "ENV POL");
-    addSlider (params::vcfEnv, panelX + 962, "ENV");
-    addSlider (params::vcfLfo, panelX + 997, "LFO");
-    addSlider (params::vcfKybd, panelX + 1032, "KYBD");
+    section ("VCF", redBand, [&]
+    {
+        addSlider (params::vcfFreq, col (sliderCol), "FREQ");
+        addSlider (params::vcfRes, col (sliderCol), "RES");
+        addSwitch (params::vcfPolarity, col (switchW), switchW, { "NORM", "INV" }, "ENV\nPOL");
+        addSlider (params::vcfEnv, col (sliderCol), "ENV");
+        addSlider (params::vcfLfo, col (sliderCol), "LFO");
+        addSlider (params::vcfKybd, col (sliderCol), "KYBD");
+    });
 
-    // VCA
-    addSwitch (params::vcaMode, panelX + 1058, sw, { "ENV", "GATE" }, "");
-    addSlider (params::vcaLevel, panelX + 1098, "LEVEL", PanelSlider::Scale::minusFiveToFive);
+    section ("VCA", redBand, [&]
+    {
+        addSwitch (params::vcaMode, col (switchW), switchW, { "ENV", "GATE" }, "MODE");
+        addSlider (params::vcaLevel, col (sliderCol), "LEVEL", PanelSlider::Scale::minusFiveToFive);
+    });
 
-    // ENV
-    addSlider (params::attack, panelX + 1145, "A");
-    addSlider (params::decay, panelX + 1180, "D");
-    addSlider (params::sustain, panelX + 1215, "S");
-    addSlider (params::release, panelX + 1250, "R");
+    section ("ENV", redBand, [&]
+    {
+        addSlider (params::attack, col (sliderCol), "A");
+        addSlider (params::decay, col (sliderCol), "D");
+        addSlider (params::sustain, col (sliderCol), "S");
+        addSlider (params::release, col (sliderCol), "R");
+    });
 
-    // CHORUS: three buttons on one choice parameter
+    section ("CHORUS", redBand, [&]
     {
         auto mk = [this] (const juce::String& legend, int cx, juce::Colour cap) -> LedButton*
         {
             auto b = std::make_unique<LedButton> (legend, cap, true, true);
-            b->setBounds (button (cx, waveBtnY));
+            b->setBounds (button (cx));
             b->setTitle ("Chorus " + legend);
             addAndMakeVisible (*b);
-            auto l = std::make_unique<juce::Label> ();
-            l->setText (legend, juce::dontSendNotification);
-            l->setFont (juce::FontOptions (10.5f, juce::Font::bold));
-            l->setColour (juce::Label::textColourId, colours::legend);
-            l->setJustificationType (juce::Justification::centred);
-            l->setBounds (cx - 22, waveBtnY - 16, 44, 14);
-            addAndMakeVisible (*l);
-            labels_.push_back (std::move (l));
+            addLegend (legend, buttonLegend (cx, btnCol), fontLegend);
             auto* raw = b.get();
             buttons_.push_back (std::move (b));
             return raw;
         };
-        chorusOff_ = mk ("OFF", panelX + 1292, colours::buttonWhite);
-        chorusI_ = mk ("I", panelX + 1327, colours::buttonYellow);
-        chorusII_ = mk ("II", panelX + 1362, colours::buttonOrange);
+        chorusOff_ = mk ("OFF", col (btnCol), colours::buttonWhite);
+        chorusI_ = mk ("I", col (btnCol), colours::buttonYellow);
+        chorusII_ = mk ("II", col (btnCol), colours::buttonOrange);
         chorusOff_->onClick = [this] { setChorus (0); };
         chorusI_->onClick = [this] { setChorus (chorusValue_ == 1 ? 0 : chorusValue_ == 2 ? 3 : chorusValue_ == 3 ? 2 : 1); };
         chorusII_->onClick = [this] { setChorus (chorusValue_ == 2 ? 0 : chorusValue_ == 1 ? 3 : chorusValue_ == 3 ? 1 : 2); };
@@ -200,6 +204,13 @@ void PanelComponent::buildMainPanel()
             syncChorusButtons();
         }, state_.undoManager);
         chorusAttachment_->sendInitialUpdate();
+    });
+
+    // MEMORY takes the rest of the panel.
+    {
+        const int x0 = x, x1 = panelX + panelW;
+        sections_.push_back ({ "MEMORY", x0, x1, blueBand });
+        buildMemory (x0 + sectionPad, x1 - sectionPad);
     }
 }
 
@@ -219,19 +230,32 @@ void PanelComponent::syncChorusButtons()
 }
 
 // ---------------------------------------------------------------------------
-void PanelComponent::buildMemory()
+std::unique_ptr<LedButton> PanelComponent::addMemoryButton (const juce::String& capText, int x, int y, int w, juce::Colour cap, bool led, const juce::String& title)
 {
-    const int x0 = panelX + 1380;
-    display_.setBounds (x0 + 12, bodyY + 36, 76, 48);
-    addAndMakeVisible (display_);
+    auto b = std::make_unique<LedButton> (title, cap, led, true);
+    b->setBounds (juce::Rectangle<int> (x, led ? y - btnLedH : y, w, led ? memBtnH + btnLedH : memBtnH));
+    b->setCapText (capText);
+    b->setTitle (title);
+    addAndMakeVisible (*b);
+    return b;
+}
 
-    static const char* bankLegends[] = { "1(6)", "2(7)", "3", "4", "5" };
+void PanelComponent::buildMemory (int x0, int x1)
+{
+    // Row 1: display, BANK 1..5, MANUAL, WRITE. Row 2: PATCH NUMBER 1..8, TAPE SAVE / VERIFY / LOAD.
+    const int row1 = bodyY + 70, row2 = bodyY + 180;
+    const int rowLegendH = 20;
+
+    display_.setBounds (x0, row1 - 14, 80, 54);
+    addAndMakeVisible (display_);
+    addLegend ("BANK / PATCH", { x0 - 6, row1 - 14 - rowLegendH - 2, 92, rowLegendH }, fontLegend - 2.0f, 1);
+
+    int bx = x0 + 80 + 14;
+    addLegend ("BANK  (shift-click 1 / 2 for 6 / 7)", { bx, row1 - rowLegendH - 4, 5 * memBtnCol + 60, rowLegendH }, fontLegend - 2.0f, 1);
     for (int i = 0; i < 5; ++i)
     {
-        auto b = std::make_unique<LedButton> (bankLegends[i], colours::buttonCream, false, true);
-        b->setBounds (juce::Rectangle<int> (x0 + 110 + i * 42, bodyY + 48, 34, 26));
-        b->setTitle ("Bank " + juce::String (i + 1));
         const int bank = i + 1;
+        auto b = addMemoryButton (juce::String (bank), bx + i * memBtnCol, row1, memBtnW, colours::buttonCream, false, "Bank " + juce::String (bank));
         b->onClick = [this, bank]
         {
             auto mods = juce::ModifierKeys::getCurrentModifiersRealtime();
@@ -241,15 +265,21 @@ void PanelComponent::buildMemory()
             if (writeArmed_) { armedBank_ = b2; return; }
             selectMemory (b2, shownPatch_);
         };
-        addAndMakeVisible (*b);
         bankButtons_.push_back (std::move (b));
     }
+    bx += 5 * memBtnCol + 16;
+    const int wideW = 48;
+    manual_ = addMemoryButton ("MAN", bx, row1, wideW, colours::buttonYellow, false, "Manual");
+    write_ = addMemoryButton ("WRITE", bx + wideW + 6, row1, wideW, colours::buttonOrange, false, "Write");
+    addLegend ("MANUAL", { bx - 8, row1 - rowLegendH - 4, wideW + 16, rowLegendH }, fontLegend - 2.0f, 1);
+    addLegend ("WRITE", { bx + wideW + 6 - 8, row1 - rowLegendH - 4, wideW + 16, rowLegendH }, fontLegend - 2.0f, 1);
+
+    int px = x0;
+    addLegend ("PATCH NUMBER", { px, row2 - rowLegendH - 4, 8 * memBtnCol, rowLegendH }, fontLegend - 2.0f, 1);
     for (int i = 0; i < 8; ++i)
     {
-        auto b = std::make_unique<LedButton> (juce::String (i + 1), colours::buttonCream, false, true);
-        b->setBounds (juce::Rectangle<int> (x0 + 12 + i * 42, bodyY + 130, 34, 26));
-        b->setTitle ("Patch " + juce::String (i + 1));
         const int patch = i + 1;
+        auto b = addMemoryButton (juce::String (patch), px + i * memBtnCol, row2, memBtnW, colours::buttonCream, false, "Patch " + juce::String (patch));
         b->onClick = [this, patch]
         {
             if (writeArmed_)
@@ -264,35 +294,20 @@ void PanelComponent::buildMemory()
             }
             selectMemory (shownBank_, patch);
         };
-        addAndMakeVisible (*b);
         patchButtons_.push_back (std::move (b));
     }
-
-    auto mk = [this] (const juce::String& legend, int x, int y, juce::Colour cap, bool led)
-    {
-        auto b = std::make_unique<LedButton> (legend, cap, led, true);
-        b->setBounds (juce::Rectangle<int> (x, y, 34, led ? 38 : 26));
-        b->setTitle (legend);
-        addAndMakeVisible (*b);
-        auto l = std::make_unique<juce::Label> ();
-        l->setText (legend, juce::dontSendNotification);
-        l->setFont (juce::FontOptions (9.5f, juce::Font::bold));
-        l->setColour (juce::Label::textColourId, colours::legend);
-        l->setJustificationType (juce::Justification::centred);
-        l->setBounds (x - 12, y - 15, 58, 14);
-        addAndMakeVisible (*l);
-        labels_.push_back (std::move (l));
-        return b;
-    };
-    manual_ = mk ("MANUAL", x0 + 258, bodyY + 130, colours::buttonYellow, false);
-    write_ = mk ("WRITE", x0 + 312, bodyY + 130, colours::buttonOrange, false);
-    save_ = mk ("SAVE", x0 + 258, bodyY + 36, colours::buttonYellow, true);
-    verify_ = mk ("VERIFY", x0 + 300, bodyY + 36, colours::buttonYellow, true);
-    load_ = mk ("LOAD", x0 + 342, bodyY + 36, colours::buttonOrange, true);
+    px += 8 * memBtnCol + 16;
+    const int tapeW = juce::jmax (3 * (memBtnW + 10), x1 - px);
+    addLegend ("TAPE / FILE", { px, row2 - rowLegendH - 4, tapeW, rowLegendH }, fontLegend - 2.0f, 1);
+    const int tapeCol = tapeW / 3, tapeBtnW = juce::jmin (memBtnW + 10, tapeCol - 4);
+    save_ = addMemoryButton ("SAVE", px, row2 + btnLedH, tapeBtnW, colours::buttonYellow, true, "Save preset file");
+    verify_ = addMemoryButton ("VER", px + tapeCol, row2 + btnLedH, tapeBtnW, colours::buttonYellow, true, "Verify (no tape; flashes)");
+    load_ = addMemoryButton ("LOAD", px + 2 * tapeCol, row2 + btnLedH, tapeBtnW, colours::buttonOrange, true, "Load preset file");
 
     manual_->onClick = [this]
     {
         manualMode_ = true;
+        manualIndex_ = processor_.presets().currentIndex();
         writeArmed_ = false;
         updateDisplay();
     };
@@ -323,7 +338,6 @@ void PanelComponent::buildMemory()
             if (f != juce::File())
             {
                 processor_.presets().importFile (f);
-                manualMode_ = true;
                 updateDisplay();
             }
         });
@@ -358,12 +372,38 @@ void PanelComponent::selectMemory (int bank, int patch)
 
 void PanelComponent::updateDisplay()
 {
+    // The display follows whatever is loaded, from any selector: factory patch -> its number,
+    // a written Memory slot -> its number, any other user preset -> "--" (no memory number).
+    auto& pm = processor_.presets();
+    const int idx = pm.currentIndex();
+    if (manualMode_ && idx != manualIndex_)
+        manualMode_ = false;
+
+    juce::String text = "--";
+    const auto& entries = pm.entries();
+    if (idx >= 0 && idx < static_cast<int> (entries.size()))
+    {
+        const auto& e = entries[static_cast<std::size_t> (idx)];
+        if (e.factoryIndex >= 0)
+        {
+            shownBank_ = e.factoryIndex / 8 + 1;
+            shownPatch_ = e.factoryIndex % 8 + 1;
+            text = juce::String (shownBank_) + juce::String (shownPatch_);
+        }
+        else if (e.bank == "Memory" && e.name.length() == 2 && e.name.containsOnly ("0123456789"))
+        {
+            shownBank_ = e.name.substring (0, 1).getIntValue();
+            shownPatch_ = e.name.substring (1, 2).getIntValue();
+            text = e.name;
+        }
+    }
+
     if (writeArmed_)
         display_.setText ("__", false);
     else if (manualMode_)
         display_.setText ("--", false);
     else
-        display_.setText (juce::String (shownBank_) + juce::String (shownPatch_), processor_.presets().isEdited());
+        display_.setText (text, pm.isEdited());
 }
 
 // ---------------------------------------------------------------------------
@@ -372,33 +412,39 @@ void PanelComponent::buildBenderPanel()
     const int bx = benderX, by = benderY;
 
     benderDco_ = std::make_unique<PanelSlider> ();
-    benderDco_->setLegend ("DCO");
-    benderDco_->setBounds (bx + 20, by + 40, 44, 150);
+    benderDco_->setBounds (bx + 24, by + 56, sliderCol, 170);
+    benderDco_->setTitle ("Bender DCO depth");
     addAndMakeVisible (*benderDco_);
     benderDcoAtt_ = std::make_unique<Apvts::SliderAttachment> (state_, params::benderDco, *benderDco_);
+    addLegend ("DCO", { bx + 14, by + 20, sliderCol + 20, legendH }, fontLegend);
 
     benderVcf_ = std::make_unique<PanelSlider> ();
-    benderVcf_->setLegend ("VCF");
-    benderVcf_->setBounds (bx + 62, by + 40, 44, 150);
+    benderVcf_->setBounds (bx + 74, by + 56, sliderCol, 170);
+    benderVcf_->setTitle ("Bender VCF depth");
     addAndMakeVisible (*benderVcf_);
     benderVcfAtt_ = std::make_unique<Apvts::SliderAttachment> (state_, params::benderVcf, *benderVcf_);
+    addLegend ("VCF", { bx + 64, by + 20, sliderCol + 20, legendH }, fontLegend);
 
     volume_ = std::make_unique<PanelKnob> ();
-    volume_->setBounds (bx + 140, by + 28, 90, 90);
+    volume_->setBounds (bx + 150, by + 44, 100, 100);
     volume_->setTitle ("Volume");
     addAndMakeVisible (*volume_);
     volumeAtt_ = std::make_unique<Apvts::SliderAttachment> (state_, params::volume, *volume_);
+    addLegend ("VOLUME", { bx + 140, by + 12, 120, legendH }, fontLegend);
 
     lfoTrig_ = std::make_unique<LedButton> ("LFO TRIG", colours::buttonCream, false, true);
-    lfoTrig_->setBounds (bx + 120, by + 130, 60, 34);
+    lfoTrig_->setBounds (bx + 136, by + 186, 56, 36);
+    lfoTrig_->setCapText ("TRIG");
     lfoTrig_->setTitle ("LFO Trig");
     lfoTrig_->onStateChange = [this] { processor_.setUiLfoTrig (lfoTrig_->isDown()); };
     addAndMakeVisible (*lfoTrig_);
+    addLegend ("LFO\nTRIG", { bx + 120, by + 150, 88, legendH }, fontLegend);
 
     octave_ = std::make_unique<SlideSwitch> (juce::StringArray { "DOWN", "NORMAL", "UP" }, true);
-    octave_->setBounds (bx + 195, by + 130, 90, 40);
+    octave_->setBounds (bx + 196, by + 180, 100, 44);
     octave_->setTitle ("Octave Transpose");
     addAndMakeVisible (*octave_);
+    addLegend ("OCTAVE\nTRANSPOSE", { bx + 196, by + 146, 100, legendH }, fontLegend);
     {
         auto* param = state_.getParameter (params::octave);
         auto* raw = octave_.get();
@@ -414,21 +460,22 @@ void PanelComponent::buildBenderPanel()
     bender_ = std::make_unique<juce::Slider> (juce::Slider::LinearHorizontal, juce::Slider::NoTextBox);
     bender_->setRange (-1.0, 1.0, 0.0);
     bender_->setValue (0.0, juce::dontSendNotification);
-    bender_->setBounds (bx + 90, by + 215, 130, 30);
+    bender_->setBounds (bx + 70, by + 290, 160, 34);
     bender_->setTitle ("Bender");
     bender_->onValueChange = [this] { processor_.setUiBender (bender_->getValue()); };
     bender_->onDragEnd = [this] { bender_->setValue (0.0, juce::sendNotificationSync); }; // spring return
     addAndMakeVisible (*bender_);
+    addLegend ("BENDER", { bx + 70, by + 258, 160, legendH }, fontLegend);
 }
 
 // ---------------------------------------------------------------------------
 void PanelComponent::timerCallback()
 {
-    // Edited dots and the key transpose LED follow the parameters.
+    // Display, edited dots and the key transpose LED follow the parameters and the preset list.
     updateDisplay();
     auto* kt = state_.getRawParameterValue (params::keyTranspose);
-    if (kt != nullptr && ! buttons_.empty())
-        buttons_.front()->setLedOn (kt->load() > 0.5f);
+    if (kt != nullptr && keyTranspose_ != nullptr)
+        keyTranspose_->setLedOn (kt->load() > 0.5f);
 }
 
 void PanelComponent::resized() {}
@@ -443,30 +490,31 @@ void PanelComponent::paint (juce::Graphics& g)
     g.fillRect (panel);
 
     // Section bands and separators
-    for (const auto& s : sections)
+    for (const auto& s : sections_)
     {
         juce::Rectangle<float> band (static_cast<float> (s.x0), static_cast<float> (bandY), static_cast<float> (s.x1 - s.x0), static_cast<float> (bandH));
-        const auto c = s.band == creamBand ? colours::bandCream : s.band == blueBand ? colours::bandBlue : colours::bandRed;
+        const auto c = s.band == 0 ? colours::bandCream : s.band == 1 ? colours::bandBlue : colours::bandRed;
         g.setColour (c);
         g.fillRect (band);
-        drawLegend (g, s.title, band, juce::Justification::centred, 14.0f, s.band == creamBand ? colours::bandTextOnCream : colours::legend);
+        drawLegend (g, s.title, band, juce::Justification::centred, fontBand, s.band == 0 ? colours::bandTextOnCream : colours::legend);
         g.setColour (colours::panelEdge);
-        g.drawVerticalLine (s.x1, static_cast<float> (bandY), static_cast<float> (panelY + panelH));
+        g.fillRect (juce::Rectangle<float> (static_cast<float> (s.x1) - 1.0f, static_cast<float> (bandY), 2.0f, static_cast<float> (panelH)));
     }
     // Bottom stripe (blue on the hardware under MEMORY, cream under POWER)
     g.setColour (colours::bandBlue);
-    g.fillRect (juce::Rectangle<float> (panelX + 200.0f, panelY + panelH - 8.0f, panelW - 200.0f, 8.0f));
+    g.fillRect (juce::Rectangle<float> (panelX + 220.0f, panelY + panelH - 8.0f, panelW - 220.0f, 8.0f));
     g.setColour (colours::bandCream);
-    g.fillRect (juce::Rectangle<float> (static_cast<float> (panelX), panelY + panelH - 8.0f, 200.0f, 8.0f));
+    g.fillRect (juce::Rectangle<float> (static_cast<float> (panelX), panelY + panelH - 8.0f, 220.0f, 8.0f));
 
-    // Section legends that are not attached to a control
-    drawLegend (g, "POWER", { panelX + 5.0f, bodyY + 40.0f, 60.0f, 16.0f }, juce::Justification::centred, 11.0f);
-    drawLegend (g, "PATCH\nBANK NUMBER", { panelX + 1386.0f, bodyY + 2.0f, 90.0f, 30.0f }, juce::Justification::centred, 9.5f);
-    drawLegend (g, "BANK", { panelX + 1490.0f, bodyY + 28.0f, 200.0f, 14.0f }, juce::Justification::centred, 10.0f);
-    drawLegend (g, "PATCH NUMBER", { panelX + 1392.0f, bodyY + 110.0f, 340.0f, 14.0f }, juce::Justification::centred, 10.0f);
-    drawLegend (g, "TAPE", { panelX + 1640.0f, bodyY + 2.0f, 140.0f, 14.0f }, juce::Justification::centred, 10.0f);
-    drawLegend (g, "PROGRAMMABLE POLYPHONIC SYNTHESIZER", { panelX + 1200.0f, panelY + panelH + 6.0f, 560.0f, 18.0f }, juce::Justification::centredRight, 13.0f);
-    drawLegend (g, "Jane-Sixty", { panelX + 1500.0f, panelY - 2.0f, 260.0f, 0.0f }, juce::Justification::centredRight, 1.0f);
+    // Control legends
+    for (const auto& l : legends_)
+    {
+        g.setColour (colours::legend);
+        g.setFont (juce::FontOptions (l.size, juce::Font::bold));
+        g.drawFittedText (l.text, l.area, l.lines > 1 ? juce::Justification::centredBottom : juce::Justification::centred, l.lines);
+    }
+
+    drawLegend (g, "PROGRAMMABLE POLYPHONIC SYNTHESIZER", { panelX + panelW - 560.0f, panelY + panelH + 6.0f, 560.0f, 20.0f }, juce::Justification::centredRight, 14.0f);
 
     // Bender panel
     juce::Rectangle<float> bp (benderX, benderY, benderW, benderH);
@@ -474,10 +522,6 @@ void PanelComponent::paint (juce::Graphics& g)
     g.fillRoundedRectangle (bp.expanded (4.0f), 4.0f);
     g.setColour (colours::panel);
     g.fillRect (bp);
-    drawLegend (g, "VOLUME", { benderX + 140.0f, benderY + 10.0f, 90.0f, 16.0f }, juce::Justification::centred, 11.0f);
-    drawLegend (g, "LFO TRIG", { benderX + 110.0f, benderY + 112.0f, 80.0f, 16.0f }, juce::Justification::centred, 11.0f);
-    drawLegend (g, "OCTAVE\nTRANSPOSE", { benderX + 195.0f, benderY + 100.0f, 90.0f, 30.0f }, juce::Justification::centred, 10.0f);
-    drawLegend (g, "BENDER", { benderX + 90.0f, benderY + 198.0f, 130.0f, 16.0f }, juce::Justification::centred, 11.0f);
 
     // Wooden end cheeks
     g.setColour (colours::wood);

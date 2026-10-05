@@ -42,10 +42,11 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
     content_.addAndMakeVisible (edited_);
     content_.addAndMakeVisible (hint_);
     edited_.setJustificationType (juce::Justification::centredLeft);
-    edited_.setFont (juce::FontOptions (12.0f));
-    hint_.setText ("Computer keys: A S D F G H J K (W E T Y U sharps), Z / X octave. Shift + bank 1 / 2 = bank 6 / 7.", juce::dontSendNotification);
+    edited_.setFont (juce::FontOptions (16.0f, juce::Font::bold));
+    edited_.setColour (juce::Label::textColourId, juce::Colour (0xffff9f40));
+    hint_.setText ("Keys: A S D F G H J K play, W E T Y U sharps, Z / X octave. 1 to 7 chords, Space loops a progression (docs/user/keyboard-shortcuts.md).", juce::dontSendNotification);
     hint_.setJustificationType (juce::Justification::centredRight);
-    hint_.setFont (juce::FontOptions (11.0f));
+    hint_.setFont (juce::FontOptions (14.0f));
     hint_.setColour (juce::Label::textColourId, juce::Colour (0xff9a9a9a));
 
     prev_.onClick = [this] { processor_.presets().loadPrevious(); refreshPresetList(); };
@@ -66,19 +67,19 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
 
     {
         auto strip = juce::Rectangle<int> (panelX, stripY, panelW, stripH).reduced (0, 4);
-        prev_.setBounds (strip.removeFromLeft (34));
-        next_.setBounds (strip.removeFromLeft (34));
+        prev_.setBounds (strip.removeFromLeft (40));
+        next_.setBounds (strip.removeFromLeft (40));
         strip.removeFromLeft (8);
-        undo_.setBounds (strip.removeFromRight (60));
+        undo_.setBounds (strip.removeFromRight (72));
         strip.removeFromRight (4);
-        save_.setBounds (strip.removeFromRight (60));
+        save_.setBounds (strip.removeFromRight (72));
         strip.removeFromRight (4);
-        copy_.setBounds (strip.removeFromRight (60));
+        copy_.setBounds (strip.removeFromRight (72));
         strip.removeFromRight (4);
-        ab_.setBounds (strip.removeFromRight (44));
+        ab_.setBounds (strip.removeFromRight (52));
         strip.removeFromRight (8);
-        hint_.setBounds (strip.removeFromRight (620));
-        edited_.setBounds (strip.removeFromRight (70));
+        hint_.setBounds (strip.removeFromRight (900));
+        edited_.setBounds (strip.removeFromRight (80));
         presetBox_.setBounds (strip);
     }
 
@@ -87,8 +88,12 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
 
     setResizable (true, true);
     getConstrainer()->setFixedAspectRatio (static_cast<double> (refWidth) / static_cast<double> (refHeight));
-    setResizeLimits (950, 350, refWidth * 2, refHeight * 2);
-    setSize (1330, 490);
+    setResizeLimits (1130, 425, refWidth * 2, refHeight * 2);
+    // Open as wide as the display comfortably allows (the panel is a 1 m wide strip).
+    int w = 1500;
+    if (auto* d = juce::Desktop::getInstance().getDisplays().getPrimaryDisplay())
+        w = juce::jlimit (1130, 1800, static_cast<int> (d->userBounds.getWidth()) - 80);
+    setSize (w, static_cast<int> (std::lround (w * static_cast<double> (refHeight) / refWidth)));
 }
 
 Jane60Editor::~Jane60Editor() = default;

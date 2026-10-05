@@ -21,6 +21,9 @@ void Synth::prepare (const Calibration& cal, double sampleRate, double a4Hz)
     noise_.configure (sampleRate, cal.dco.noiseVppAtMax * (cal.dco.sawVpp / cal.vca.voiceOutVpp));
     hpf_.configure (cal.hpf, sampleRate);
     chorus_.prepare (cal.chorus, sampleRate);
+    shelfL_.set (cal.voicing.lowShelfHz, sampleRate);
+    shelfR_.set (cal.voicing.lowShelfHz, sampleRate);
+    shelfGainMinusOne_ = std::pow (10.0, cal.voicing.lowShelfDb / 20.0) - 1.0;
     for (auto& v : voices_)
     {
         v.configure (cal, sampleRate);
@@ -293,10 +296,26 @@ void Synth::render (float* left, float* right, int numSamples, const std::vector
         const double pre = hpf_.process (sum) * levelGain;
         double oL, oR;
         chorus_.process (pre, oL, oR);
-        const double g = 0.08 * volume;
-        left[i] = static_cast<float> (oL * g);
-        if (right != nullptr) right[i] = static_cast<float> (oR * g);
+        if (shelfGainMinusOne_ != 0.0)
+        {
+            oL += shelfGainMinusOne_ * shelfL_.process (oL);
+            oR += shelfGainMinusOne_ * shelfR_.process (oR);
+        }
+        const double g = 0.065 * volume;
+        left[i] = static_cast<float> (outputStage (oL * g));
+        if (right != nullptr) right[i] = static_cast<float> (outputStage (oR * g));
     }
+}
+
+double Synth::outputStage (double x) noexcept
+{
+    // The output op-amp runs out of rail: linear to the knee, then a soft tanh
+    // compression that never exceeds full scale. assumed: knee at -3 dBFS.
+    constexpr double knee = 0.7, room = 1.0 - knee;
+    const double a = std::abs (x);
+    if (a <= knee) return x;
+    const double y = knee + room * std::tanh ((a - knee) / room);
+    return x < 0.0 ? -y : y;
 }
 
 int Synth::activeVoices() const noexcept

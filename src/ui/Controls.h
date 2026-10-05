@@ -43,11 +43,9 @@ public:
 
     explicit PanelSlider (Scale scale = Scale::zeroToTen);
     void paint (juce::Graphics& g) override;
-    void setLegend (const juce::String& text) { legend_ = text; repaint(); }
 
 private:
     Scale scale_;
-    juce::String legend_;
 };
 
 /// Latching push button with an LED above it (DCO waveform, chorus, arpeggio, hold, key transpose).
@@ -58,9 +56,11 @@ public:
     void paintButton (juce::Graphics& g, bool highlighted, bool down) override;
     void setLedOn (bool on) { ledOn_ = on; repaint(); }
     bool isMomentary() const noexcept { return momentary_; }
+    /// Text printed on the cap itself (memory bank / patch numbers).
+    void setCapText (const juce::String& t) { capText_ = t; repaint(); }
 
 private:
-    juce::String legend_;
+    juce::String legend_, capText_;
     juce::Colour cap_;
     bool hasLed_, momentary_, ledOn_ = false;
 };

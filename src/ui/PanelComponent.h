@@ -26,13 +26,18 @@ public:
 private:
     using Apvts = juce::AudioProcessorValueTreeState;
 
+    struct Section { juce::String title; int x0, x1, band; };
+    struct Legend { juce::String text; juce::Rectangle<int> area; float size; int lines; };
+
     void timerCallback() override;
     void buildMainPanel();
     void buildBenderPanel();
-    void buildMemory();
+    void buildMemory (int x0, int x1);
+    void addLegend (const juce::String& text, juce::Rectangle<int> area, float size, int lines = 2);
     void addSlider (const char* paramId, int centreX, const juce::String& legend, PanelSlider::Scale scale = PanelSlider::Scale::zeroToTen);
-    void addSwitch (const char* paramId, int centreX, int topY, juce::StringArray legends, const juce::String& title = {});
-    LedButton* addToggle (const char* paramId, int centreX, int topY, const juce::String& legend, juce::Colour cap);
+    void addSwitch (const char* paramId, int centreX, int width, juce::StringArray legends, const juce::String& title);
+    LedButton* addToggle (const char* paramId, int centreX, const juce::String& legend, juce::Colour cap);
+    std::unique_ptr<LedButton> addMemoryButton (const juce::String& capText, int x, int y, int w, juce::Colour cap, bool led, const juce::String& title);
     void selectMemory (int bank, int patch);
     void updateDisplay();
     void syncChorusButtons();
@@ -41,6 +46,9 @@ private:
     Jane60Processor& processor_;
     Apvts& state_;
 
+    std::vector<Section> sections_;
+    std::vector<Legend> legends_;
+
     // Owned controls
     std::vector<std::unique_ptr<PanelSlider>> sliders_;
     std::vector<std::unique_ptr<Apvts::SliderAttachment>> sliderAttachments_;
@@ -48,7 +56,7 @@ private:
     std::vector<std::unique_ptr<Apvts::ButtonAttachment>> buttonAttachments_;
     std::vector<std::unique_ptr<SlideSwitch>> switches_;
     std::vector<std::unique_ptr<juce::ParameterAttachment>> switchAttachments_;
-    std::vector<std::unique_ptr<juce::Label>> labels_;
+    LedButton* keyTranspose_ = nullptr;
 
     // Chorus: three buttons driving one choice parameter
     LedButton* chorusOff_ = nullptr; LedButton* chorusI_ = nullptr; LedButton* chorusII_ = nullptr;
@@ -62,6 +70,7 @@ private:
     bool writeArmed_ = false;
     int armedBank_ = -1;
     bool manualMode_ = false;
+    int manualIndex_ = -1;       // preset index at which MANUAL was pressed
     int shownBank_ = 1, shownPatch_ = 1;
 
     // Bender panel

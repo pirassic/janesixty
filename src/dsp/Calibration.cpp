@@ -199,6 +199,12 @@ Calibration Calibration::fromJson (std::string_view jsonText)
     c.chorus.dryGain       = r.number ("chorus.dryGain");
     c.chorus.wetGain       = r.number ("chorus.wetGain");
 
+    if (root.contains ("voicing"))
+    {
+        c.voicing.lowShelfDb = r.number ("voicing.lowShelfDb");
+        c.voicing.lowShelfHz = r.number ("voicing.lowShelfHz");
+    }
+
     c.firmware.sliderBits  = r.integer ("firmware.sliderBits");
     c.firmware.panelLoopMs = r.number ("firmware.panelLoopMs");
     c.firmware.voices      = r.integer ("firmware.voices");

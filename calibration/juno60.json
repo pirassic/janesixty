@@ -87,6 +87,12 @@
     "wetGain":       { "value": 1.0,  "source": "assumed: Hera fit" }
   },
 
+  "voicing": {
+    "_about": "Provisional output voicing with no circuit source. Zero lowShelfDb to hear the bare model.",
+    "lowShelfDb": { "value": 1.0,   "source": "assumed: listening fit against the factory demo recordings (the originals sit about 10 to 15 % heavier below 150 Hz); replace by measurement" },
+    "lowShelfHz": { "value": 150.0, "source": "assumed: listening fit, as lowShelfDb" }
+  },
+
   "firmware": {
     "sliderBits":  { "value": 8,   "source": "service-notes p.16 (successive-approximation ADC, 8 bits)" },
     "panelLoopMs": { "value": 7.2, "source": "service-notes p.17 Fig.10" },

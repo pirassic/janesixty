@@ -53,6 +53,7 @@ private:
     void arpTick() noexcept;
     void updateControls() noexcept;
     int transposeSemis() const noexcept;
+    static double outputStage (double x) noexcept;
     bool holdActive() const noexcept { return panel_.hold || pedal_; }
 
     const Calibration* cal_ = nullptr;
@@ -65,6 +66,8 @@ private:
     NoiseSource noise_;
     Hpf hpf_;
     ChorusBoard chorus_;
+    OnePoleLp shelfL_, shelfR_;   // provisional output voicing (Calibration::Voicing)
+    double shelfGainMinusOne_ = 0.0;
     std::array<Voice, kVoices> voices_;
 
     int nextVoice_ = 0;          // rotary assignment pointer

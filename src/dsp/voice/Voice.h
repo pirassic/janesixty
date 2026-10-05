@@ -20,8 +20,10 @@ namespace jane60
 struct VcfMapping
 {
     /// Cutoff slider: octaves per slider unit, anchored at the 248 Hz point.
-    /// assumed: linear in octaves between ~38 Hz (0) and ~19 kHz (10).
-    double octavesPerSliderUnit = 0.9;
+    /// assumed: linear in octaves, 1 oct per unit, ~31 Hz (0) to ~31 kHz (10). Raised from
+    /// 0.9 after listening against the factory demo recordings (patches sat darker than the
+    /// originals at the same FREQ setting); the ngspice sweep in phase 4 settles it.
+    double octavesPerSliderUnit = 1.0;
 
     /// Resonance slider position at which k reaches 4 (self-oscillation threshold).
     /// assumed: plugin-derived 0.75..0.8 of travel.
@@ -34,12 +36,18 @@ struct VcfMapping
     /// so the corner is raised to compensate. assumed: replaced by the ngspice reference in phase 4.
     double selfOscShift = 248.0 / 227.9;
 
-    /// Depth sliders: square-law taper (plugin-derived).
+    /// Bender and DCO LFO depth sliders: square-law taper (plugin-derived).
     static double depthTaper (double slider0to10) noexcept
     {
         const double x = slider0to10 / 10.0;
         return x * x;
     }
+
+    /// VCF ENV and LFO depth sliders drive BA662 control VCAs (IC23, IC24 on Panel Board A)
+    /// whose gain is linear in control current, so the depth is linear in the slider.
+    /// Was square-law (plugin-derived); linear makes the envelope click on the organ and
+    /// celesta patches as percussive as the originals. schematic reading, confirm in phase 4.
+    static double cvDepth (double slider0to10) noexcept { return slider0to10 / 10.0; }
 };
 
 class Voice
@@ -125,9 +133,9 @@ public:
         // Cutoff CV: FREQ + ENV*depth*polarity + LFO*depth + KYBD + pedal + bender
         const Calibration::Vcf& v = cal_->vcf;
         double oct = (p.vcfFreq - v.anchorSliderPos) * map_.octavesPerSliderUnit;
-        const double envDepth = VcfMapping::depthTaper (p.vcfEnv) * envFullDepthOct_;
+        const double envDepth = VcfMapping::cvDepth (p.vcfEnv) * envFullDepthOct_;
         oct += (p.vcfPolarity == VcfPolarity::normal ? 1.0 : -1.0) * envDepth * env;
-        oct += VcfMapping::depthTaper (p.vcfLfo) * v.lfoFullDepthOct * lfo;
+        oct += VcfMapping::cvDepth (p.vcfLfo) * v.lfoFullDepthOct * lfo;
         oct += (p.vcfKybd / 10.0) * v.keyFollowOctPerOct * (note_ + octaveOffset_ - v.keyFollowPivotNote) / 12.0;
         oct += (benderVcfVolts / 5.0) * 2.0; // assumed: full bender VCF ~ +-2 octaves
         oct += ((p.vcfPedalVolts - v.pedalDefaultVolts) / 5.0) * 2.0;

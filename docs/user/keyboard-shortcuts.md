@@ -40,5 +40,7 @@ Each chord in a loop is held for about 83 % of the step, so patches with a relea
 | Keys | Action |
 |---|---|
 | Shift + click bank 1 or 2 | Bank 6 or 7 (hardware: hold bank 5 and press 1 or 2) |
+| MAN | Manual: the display shows "--" until a memory is selected (the panel is always live in software) |
+| WRITE, then a bank and a patch button | Store the current panel in that memory number (kept as a user preset in the Memory bank) |
 | Double-click a slider | Reset it to 0 |
 | Mouse wheel over a slider | Fine adjust |
