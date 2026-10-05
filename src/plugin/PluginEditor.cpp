@@ -12,8 +12,10 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
     : AudioProcessorEditor (&p),
       processor_ (p),
       panel_ (p),
-      keyboard_ (p.keyboardState(), juce::MidiKeyboardComponent::horizontalKeyboard)
+      keyboard_ (p.keyboardState(), juce::MidiKeyboardComponent::horizontalKeyboard),
+      demo_ (p.keyboardState())
 {
+    setWantsKeyboardFocus (true);
     content_.setSize (refWidth, refHeight);
     addAndMakeVisible (content_);
 
@@ -136,6 +138,11 @@ void Jane60Editor::savePreset()
             refreshPresetList();
         }
     }), true);
+}
+
+bool Jane60Editor::keyPressed (const juce::KeyPress& key)
+{
+    return demo_.handleKey (key);
 }
 
 void Jane60Editor::paint (juce::Graphics& g)

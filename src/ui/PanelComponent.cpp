@@ -54,10 +54,10 @@ void PanelComponent::addSwitch (const char* paramId, int centreX, int topY, juce
     {
         auto l = std::make_unique<juce::Label> ();
         l->setText (title, juce::dontSendNotification);
-        l->setFont (juce::FontOptions (9.0f, juce::Font::bold));
+        l->setFont (juce::FontOptions (11.0f, juce::Font::bold));
         l->setColour (juce::Label::textColourId, colours::legend);
         l->setJustificationType (juce::Justification::centred);
-        l->setBounds (centreX - 30, topY - 16, 60, 14);
+        l->setBounds (centreX - 40, topY - 18, 80, 16);
         addAndMakeVisible (*l);
         labels_.push_back (std::move (l));
     }
@@ -76,10 +76,10 @@ LedButton* PanelComponent::addToggle (const char* paramId, int centreX, int topY
         buttonAttachments_.push_back (std::make_unique<Apvts::ButtonAttachment> (state_, paramId, *b));
     auto l = std::make_unique<juce::Label> ();
     l->setText (legend, juce::dontSendNotification);
-    l->setFont (juce::FontOptions (8.0f, juce::Font::bold));
+    l->setFont (juce::FontOptions (10.5f, juce::Font::bold));
     l->setColour (juce::Label::textColourId, colours::legend);
     l->setJustificationType (juce::Justification::centred);
-    l->setBounds (centreX - 36, topY - 14, 72, 12);
+    l->setBounds (centreX - 40, topY - 16, 80, 14);
     addAndMakeVisible (*l);
     labels_.push_back (std::move (l));
     buttons_.push_back (std::move (b));
@@ -115,10 +115,10 @@ void PanelComponent::buildMainPanel()
         addAndMakeVisible (*b);
         auto l = std::make_unique<juce::Label> ();
         l->setText ("KEY\nTRANSPOSE", juce::dontSendNotification);
-        l->setFont (juce::FontOptions (8.0f, juce::Font::bold));
+        l->setFont (juce::FontOptions (10.5f, juce::Font::bold));
         l->setColour (juce::Label::textColourId, colours::legend);
         l->setJustificationType (juce::Justification::centred);
-        l->setBounds (panelX + 110 - 36, waveBtnY - 26, 72, 24);
+        l->setBounds (panelX + 110 - 44, waveBtnY - 30, 88, 28);
         addAndMakeVisible (*l);
         labels_.push_back (std::move (l));
         buttons_.push_back (std::move (b));
@@ -177,10 +177,10 @@ void PanelComponent::buildMainPanel()
             addAndMakeVisible (*b);
             auto l = std::make_unique<juce::Label> ();
             l->setText (legend, juce::dontSendNotification);
-            l->setFont (juce::FontOptions (8.0f, juce::Font::bold));
+            l->setFont (juce::FontOptions (10.5f, juce::Font::bold));
             l->setColour (juce::Label::textColourId, colours::legend);
             l->setJustificationType (juce::Justification::centred);
-            l->setBounds (cx - 20, waveBtnY - 14, 40, 12);
+            l->setBounds (cx - 22, waveBtnY - 16, 44, 14);
             addAndMakeVisible (*l);
             labels_.push_back (std::move (l));
             auto* raw = b.get();
@@ -276,10 +276,10 @@ void PanelComponent::buildMemory()
         addAndMakeVisible (*b);
         auto l = std::make_unique<juce::Label> ();
         l->setText (legend, juce::dontSendNotification);
-        l->setFont (juce::FontOptions (7.0f, juce::Font::bold));
+        l->setFont (juce::FontOptions (9.5f, juce::Font::bold));
         l->setColour (juce::Label::textColourId, colours::legend);
         l->setJustificationType (juce::Justification::centred);
-        l->setBounds (x - 10, y - 13, 54, 12);
+        l->setBounds (x - 12, y - 15, 58, 14);
         addAndMakeVisible (*l);
         labels_.push_back (std::move (l));
         return b;
@@ -384,7 +384,7 @@ void PanelComponent::buildBenderPanel()
     benderVcfAtt_ = std::make_unique<Apvts::SliderAttachment> (state_, params::benderVcf, *benderVcf_);
 
     volume_ = std::make_unique<PanelKnob> ();
-    volume_->setBounds (bx + 150, by + 30, 70, 70);
+    volume_->setBounds (bx + 140, by + 28, 90, 90);
     volume_->setTitle ("Volume");
     addAndMakeVisible (*volume_);
     volumeAtt_ = std::make_unique<Apvts::SliderAttachment> (state_, params::volume, *volume_);
@@ -449,7 +449,7 @@ void PanelComponent::paint (juce::Graphics& g)
         const auto c = s.band == creamBand ? colours::bandCream : s.band == blueBand ? colours::bandBlue : colours::bandRed;
         g.setColour (c);
         g.fillRect (band);
-        drawLegend (g, s.title, band, juce::Justification::centred, 12.0f, s.band == creamBand ? colours::bandTextOnCream : colours::legend);
+        drawLegend (g, s.title, band, juce::Justification::centred, 14.0f, s.band == creamBand ? colours::bandTextOnCream : colours::legend);
         g.setColour (colours::panelEdge);
         g.drawVerticalLine (s.x1, static_cast<float> (bandY), static_cast<float> (panelY + panelH));
     }
@@ -460,12 +460,12 @@ void PanelComponent::paint (juce::Graphics& g)
     g.fillRect (juce::Rectangle<float> (static_cast<float> (panelX), panelY + panelH - 8.0f, 200.0f, 8.0f));
 
     // Section legends that are not attached to a control
-    drawLegend (g, "POWER", { panelX + 5.0f, bodyY + 40.0f, 60.0f, 14.0f }, juce::Justification::centred, 9.0f);
-    drawLegend (g, "PATCH\nBANK NUMBER", { panelX + 1392.0f, bodyY + 4.0f, 80.0f, 28.0f }, juce::Justification::centred, 7.0f);
-    drawLegend (g, "BANK", { panelX + 1490.0f, bodyY + 30.0f, 200.0f, 12.0f }, juce::Justification::centred, 8.0f);
-    drawLegend (g, "PATCH NUMBER", { panelX + 1392.0f, bodyY + 112.0f, 340.0f, 12.0f }, juce::Justification::centred, 8.0f);
-    drawLegend (g, "TAPE", { panelX + 1640.0f, bodyY + 4.0f, 140.0f, 12.0f }, juce::Justification::centred, 8.0f);
-    drawLegend (g, "PROGRAMMABLE POLYPHONIC SYNTHESIZER", { panelX + 1200.0f, panelY + panelH + 6.0f, 560.0f, 18.0f }, juce::Justification::centredRight, 12.0f);
+    drawLegend (g, "POWER", { panelX + 5.0f, bodyY + 40.0f, 60.0f, 16.0f }, juce::Justification::centred, 11.0f);
+    drawLegend (g, "PATCH\nBANK NUMBER", { panelX + 1386.0f, bodyY + 2.0f, 90.0f, 30.0f }, juce::Justification::centred, 9.5f);
+    drawLegend (g, "BANK", { panelX + 1490.0f, bodyY + 28.0f, 200.0f, 14.0f }, juce::Justification::centred, 10.0f);
+    drawLegend (g, "PATCH NUMBER", { panelX + 1392.0f, bodyY + 110.0f, 340.0f, 14.0f }, juce::Justification::centred, 10.0f);
+    drawLegend (g, "TAPE", { panelX + 1640.0f, bodyY + 2.0f, 140.0f, 14.0f }, juce::Justification::centred, 10.0f);
+    drawLegend (g, "PROGRAMMABLE POLYPHONIC SYNTHESIZER", { panelX + 1200.0f, panelY + panelH + 6.0f, 560.0f, 18.0f }, juce::Justification::centredRight, 13.0f);
     drawLegend (g, "Jane-Sixty", { panelX + 1500.0f, panelY - 2.0f, 260.0f, 0.0f }, juce::Justification::centredRight, 1.0f);
 
     // Bender panel
@@ -474,10 +474,10 @@ void PanelComponent::paint (juce::Graphics& g)
     g.fillRoundedRectangle (bp.expanded (4.0f), 4.0f);
     g.setColour (colours::panel);
     g.fillRect (bp);
-    drawLegend (g, "VOLUME", { benderX + 140.0f, benderY + 12.0f, 90.0f, 14.0f }, juce::Justification::centred, 9.0f);
-    drawLegend (g, "LFO TRIG", { benderX + 110.0f, benderY + 114.0f, 80.0f, 14.0f }, juce::Justification::centred, 9.0f);
-    drawLegend (g, "OCTAVE\nTRANSPOSE", { benderX + 195.0f, benderY + 104.0f, 90.0f, 26.0f }, juce::Justification::centred, 8.0f);
-    drawLegend (g, "BENDER", { benderX + 90.0f, benderY + 200.0f, 130.0f, 14.0f }, juce::Justification::centred, 9.0f);
+    drawLegend (g, "VOLUME", { benderX + 140.0f, benderY + 10.0f, 90.0f, 16.0f }, juce::Justification::centred, 11.0f);
+    drawLegend (g, "LFO TRIG", { benderX + 110.0f, benderY + 112.0f, 80.0f, 16.0f }, juce::Justification::centred, 11.0f);
+    drawLegend (g, "OCTAVE\nTRANSPOSE", { benderX + 195.0f, benderY + 100.0f, 90.0f, 30.0f }, juce::Justification::centred, 10.0f);
+    drawLegend (g, "BENDER", { benderX + 90.0f, benderY + 198.0f, 130.0f, 16.0f }, juce::Justification::centred, 11.0f);
 
     // Wooden end cheeks
     g.setColour (colours::wood);

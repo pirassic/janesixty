@@ -18,10 +18,11 @@ PanelSlider::PanelSlider (Scale scale) : scale_ (scale)
 {
     setSliderStyle (juce::Slider::LinearVertical);
     setTextBoxStyle (juce::Slider::NoTextBox, true, 0, 0);
-    setMouseDragSensitivity (160);
     setVelocityBasedMode (false);
-    setDoubleClickReturnValue (true, scale == Scale::minusFiveToFive ? 0.0 : 0.0);
-    setSliderSnapsToMousePosition (false);
+    setDoubleClickReturnValue (true, 0.0);
+    // Click anywhere on the travel to jump there, then drag; the cap follows the mouse 1:1.
+    setSliderSnapsToMousePosition (true);
+    setScrollWheelEnabled (true);
     if (scale == Scale::hpfDetents)
         setRange (0.0, 3.0, 1.0);
 }
@@ -49,8 +50,8 @@ void PanelSlider::paint (juce::Graphics& g)
             if (scale_ == Scale::zeroToTen) label = juce::String (i);
             else if (scale_ == Scale::hpfDetents) label = juce::String (i);
             else label = i == 0 ? "-5" : i == 5 ? "0" : "+5";
-            g.setFont (juce::FontOptions (8.0f));
-            g.drawText (label, juce::Rectangle<float> (slotX - 30.0f, y - 6.0f, 16.0f, 12.0f), juce::Justification::centredRight, false);
+            g.setFont (juce::FontOptions (10.0f));
+            g.drawText (label, juce::Rectangle<float> (slotX - 34.0f, y - 7.0f, 20.0f, 14.0f), juce::Justification::centredRight, false);
         }
     }
 
@@ -62,7 +63,7 @@ void PanelSlider::paint (juce::Graphics& g)
     const double range = getMaximum() - getMinimum();
     const float pos = range > 0.0 ? static_cast<float> ((getValue() - getMinimum()) / range) : 0.0f;
     const float capY = bottom - travel * pos;
-    juce::Rectangle<float> cap (slotX - 11.0f, capY - 9.0f, 22.0f, 18.0f);
+    juce::Rectangle<float> cap (slotX - 13.0f, capY - 11.0f, 26.0f, 22.0f);
     g.setColour (juce::Colours::black.withAlpha (0.5f));
     g.fillRoundedRectangle (cap.translated (1.5f, 2.0f), 2.0f);
     g.setGradientFill (juce::ColourGradient (colours::sliderCap.brighter (0.25f), cap.getX(), cap.getY(),
@@ -72,7 +73,7 @@ void PanelSlider::paint (juce::Graphics& g)
     g.fillRect (cap.getX() + 2.0f, capY - 0.75f, cap.getWidth() - 4.0f, 1.5f);
 
     if (legend_.isNotEmpty())
-        drawLegend (g, legend_, juce::Rectangle<float> (b.getX() - 10.0f, b.getY() - 14.0f, b.getWidth() + 20.0f, 12.0f), juce::Justification::centred, 9.0f);
+        drawLegend (g, legend_, juce::Rectangle<float> (b.getX() - 14.0f, b.getY() - 18.0f, b.getWidth() + 28.0f, 16.0f), juce::Justification::centred, 12.0f);
 }
 
 // ---------------------------------------------------------------------------
@@ -151,21 +152,21 @@ void SlideSwitch::paint (juce::Graphics& g)
         g.setColour (colours::sliderCap.brighter (0.2f));
         g.fillRoundedRectangle (kx - 7.0f, b.getCentreY() - 8.0f, 14.0f, 16.0f, 2.0f);
         for (int i = 0; i < n; ++i)
-            drawLegend (g, legends_[i], juce::Rectangle<float> (b.getX() + cellW * static_cast<float> (i), b.getBottom() - 12.0f, cellW, 12.0f), juce::Justification::centred, 7.0f);
+            drawLegend (g, legends_[i], juce::Rectangle<float> (b.getX() + cellW * static_cast<float> (i), b.getBottom() - 14.0f, cellW, 14.0f), juce::Justification::centred, 9.5f);
     }
     else
     {
         const float cellH = b.getHeight() / static_cast<float> (n);
-        juce::Rectangle<float> slot (b.getX() + 6.0f, b.getY() + 6.0f, 10.0f, b.getHeight() - 12.0f);
+        juce::Rectangle<float> slot (b.getX() + 6.0f, b.getY() + 6.0f, 12.0f, b.getHeight() - 12.0f);
         g.setColour (colours::sliderSlot);
         g.fillRoundedRectangle (slot, 3.0f);
         const float ky = b.getY() + cellH * (static_cast<float> (n - 1 - position_) + 0.5f);
         g.setColour (colours::sliderCap.brighter (0.2f));
-        g.fillRoundedRectangle (slot.getCentreX() - 8.0f, ky - 7.0f, 16.0f, 14.0f, 2.0f);
+        g.fillRoundedRectangle (slot.getCentreX() - 10.0f, ky - 9.0f, 20.0f, 18.0f, 2.0f);
         for (int i = 0; i < n; ++i)
         {
             const float y = b.getY() + cellH * static_cast<float> (n - 1 - i);
-            drawLegend (g, legends_[i], juce::Rectangle<float> (slot.getRight() + 3.0f, y, b.getWidth() - slot.getRight() - 2.0f, cellH), juce::Justification::centredLeft, 7.0f);
+            drawLegend (g, legends_[i], juce::Rectangle<float> (slot.getRight() + 4.0f, y, b.getWidth() - slot.getRight() - 2.0f, cellH), juce::Justification::centredLeft, 9.5f);
         }
     }
 }

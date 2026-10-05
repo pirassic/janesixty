@@ -35,16 +35,16 @@ inline const Section sections[] = {
 };
 
 // Slider geometry
-constexpr int sliderW = 44, sliderTop = bodyY + 30, sliderH = 200;
+constexpr int sliderW = 48, sliderTop = bodyY + 34, sliderH = 210;
 inline juce::Rectangle<int> slider (int centreX) { return { centreX - sliderW / 2, sliderTop, sliderW, sliderH }; }
 
 // Buttons
-constexpr int btnW = 34, btnH = 26, btnLedH = 12;
+constexpr int btnW = 36, btnH = 28, btnLedH = 12;
 inline juce::Rectangle<int> button (int centreX, int topY) { return { centreX - btnW / 2, topY, btnW, btnH + btnLedH }; }
 constexpr int waveBtnY = bodyY + 70;   // DCO waveform / chorus buttons (one row)
 
 // Switches
-inline juce::Rectangle<int> vswitch (int centreX, int topY, int positions) { return { centreX - 10, topY, 54, 18 * positions + 8 }; }
+inline juce::Rectangle<int> vswitch (int centreX, int topY, int positions) { return { centreX - 12, topY, 78, 22 * positions + 8 }; }
 
 // Bender panel (below the main panel, left)
 constexpr int benderX = 60, benderY = 350, benderW = 290, benderH = 300;

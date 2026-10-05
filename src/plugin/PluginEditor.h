@@ -7,6 +7,7 @@
 
 #include "PluginProcessor.h"
 #include "ui/PanelComponent.h"
+#include "DemoPlayer.h"
 
 namespace jane60
 {
@@ -20,6 +21,7 @@ public:
 
     void paint (juce::Graphics&) override;
     void resized() override;
+    bool keyPressed (const juce::KeyPress& key) override;
 
 private:
     void timerCallback() override;
@@ -32,6 +34,7 @@ private:
     juce::Component content_;
     ui::PanelComponent panel_;
     juce::MidiKeyboardComponent keyboard_;
+    DemoPlayer demo_;
 
     // Modern strip (also in reference space)
     juce::TextButton prev_ { "<" }, next_ { ">" }, ab_ { "A" }, copy_ { "Copy" }, save_ { "Save" }, undo_ { "Undo" };
