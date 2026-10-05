@@ -8,40 +8,6 @@ namespace jane60
 
 using namespace ui::layout;
 
-namespace
-{
-/// Settings call-out: the condition layer (unit properties), not patch data.
-class SettingsPanel final : public juce::Component
-{
-public:
-    explicit SettingsPanel (Jane60Processor& p) : processor_ (p)
-    {
-        title_.setText ("Settings (this instance, saved with the project, not in presets)", juce::dontSendNotification);
-        title_.setFont (juce::FontOptions (15.0f, juce::Font::bold));
-        addAndMakeVisible (title_);
-        demoTrim_.setButtonText ("Match the factory demo unit: VCF trim one octave above the Service Notes");
-        demoTrim_.setToggleState (processor_.demoTrim(), juce::dontSendNotification);
-        demoTrim_.onClick = [this] { processor_.setDemoTrim (demoTrim_.getToggleState()); };
-        addAndMakeVisible (demoTrim_);
-        note_.setText ("Off restores the Service Notes trim (248 Hz at FREQ 3): every patch sits one octave darker, as the manual specifies.", juce::dontSendNotification);
-        note_.setFont (juce::FontOptions (13.0f));
-        note_.setColour (juce::Label::textColourId, juce::Colour (0xff9a9a9a));
-        addAndMakeVisible (note_);
-        setSize (560, 110);
-    }
-    void resized() override
-    {
-        auto r = getLocalBounds().reduced (12, 8);
-        title_.setBounds (r.removeFromTop (24));
-        demoTrim_.setBounds (r.removeFromTop (28));
-        note_.setBounds (r);
-    }
-private:
-    Jane60Processor& processor_;
-    juce::Label title_, note_;
-    juce::ToggleButton demoTrim_;
-};
-} // namespace
 
 Jane60Editor::Jane60Editor (Jane60Processor& p)
     : AudioProcessorEditor (&p),
@@ -90,7 +56,9 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
     copy_.onClick = [this] { processor_.presets().copyActiveToOther(); };
     save_.onClick = [this] { savePreset(); };
     undo_.onClick = [this] { processor_.undoManager().undo(); };
-    settings_.onClick = [this] { openSettings(); };
+    settings_.onClick = [this] { showSettingsMenu (&settings_, nullptr); };
+    // In the Standalone the settings live in the window's title bar (parentHierarchyChanged).
+    settings_.setVisible (processor_.wrapperType != juce::AudioProcessor::wrapperType_Standalone);
     presetBox_.onChange = [this]
     {
         const int idx = presetBox_.getSelectedId() - 1;
@@ -106,8 +74,11 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
         prev_.setBounds (strip.removeFromLeft (40));
         next_.setBounds (strip.removeFromLeft (40));
         strip.removeFromLeft (8);
-        settings_.setBounds (strip.removeFromRight (90));
-        strip.removeFromRight (4);
+        if (settings_.isVisible())
+        {
+            settings_.setBounds (strip.removeFromRight (90));
+            strip.removeFromRight (4);
+        }
         undo_.setBounds (strip.removeFromRight (72));
         strip.removeFromRight (4);
         save_.setBounds (strip.removeFromRight (72));
@@ -183,9 +154,51 @@ void Jane60Editor::savePreset()
     }), true);
 }
 
-void Jane60Editor::openSettings()
+void Jane60Editor::showSettingsMenu (juce::Component* target, juce::StandaloneFilterWindow* window)
 {
-    juce::CallOutBox::launchAsynchronously (std::make_unique<SettingsPanel> (processor_), settings_.getScreenBounds(), nullptr);
+    // Unit settings are saved with the plugin state (the project, or the Standalone's state), never in presets.
+    juce::PopupMenu m;
+    m.addSectionHeader ("Unit");
+    m.addItem (100, "Match the factory demo unit (VCF trim one octave above the Service Notes)", true, processor_.demoTrim());
+    if (window != nullptr)
+    {
+        m.addSeparator();
+        m.addItem (1, "Audio/MIDI settings...");
+        m.addSeparator();
+        m.addItem (2, "Save current state...");
+        m.addItem (3, "Load a saved state...");
+        m.addSeparator();
+        m.addItem (4, "Reset to default state");
+    }
+    juce::Component::SafePointer<Jane60Editor> self (this);
+    m.showMenuAsync (juce::PopupMenu::Options().withTargetComponent (target), [self, window] (int result)
+    {
+        if (self == nullptr || result == 0)
+            return;
+        if (result == 100)
+            self->processor_.setDemoTrim (! self->processor_.demoTrim());
+        else if (window != nullptr)
+            window->handleMenuResult (result); // 4 deletes and re-creates the plugin, this editor included
+    });
+}
+
+void Jane60Editor::parentHierarchyChanged()
+{
+    if (standaloneHooked_ || processor_.wrapperType != juce::AudioProcessor::wrapperType_Standalone)
+        return;
+    auto* window = findParentComponentOfClass<juce::StandaloneFilterWindow>();
+    if (window == nullptr)
+        return;
+    standaloneHooked_ = true;
+    // The window's own "Options" button (audio settings, state) is private to JUCE; hide it and put
+    // the one Settings button in its place. The editor owns the button, so it leaves with the editor.
+    for (int i = 0; i < window->getNumChildComponents(); ++i)
+        if (auto* b = dynamic_cast<juce::TextButton*> (window->getChildComponent (i)))
+            b->setVisible (false);
+    windowSettings_.setBounds (8, 6, 76, window->getTitleBarHeight() - 8);
+    windowSettings_.setTriggeredOnMouseDown (true);
+    windowSettings_.onClick = [this, window] { showSettingsMenu (&windowSettings_, window); };
+    window->addAndMakeVisible (windowSettings_);
 }
 
 bool Jane60Editor::keyPressed (const juce::KeyPress& key)

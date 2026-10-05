@@ -1,6 +1,6 @@
 # Settings
 
-The **Settings** button at the right of the preset strip opens the condition layer: properties of the unit being emulated, as opposed to the patch. They are saved with the plugin instance (the project, or the Standalone's saved state) and never written into presets, so a preset sounds the same relative to its panel whatever the settings.
+One **Settings** menu. In the Standalone it is the button at the top left of the window's title bar, which also holds the audio and MIDI setup, saving and loading the state, and the reset; in a plugin host it is the Settings button at the right of the preset strip. The unit settings are the condition layer: properties of the unit being emulated, as opposed to the patch. They are saved with the plugin instance (the project, or the Standalone's saved state) and never written into presets, so a preset sounds the same relative to its panel whatever the settings.
 
 | setting | default | what it does |
 |---|---|---|
