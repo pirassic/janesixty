@@ -190,10 +190,11 @@ def main():
     # then report the passband on the normalised axis k = 4 GM / GM_osc.
     def grows(gm):
         t, y = tran(wd, "network", 1000.0, tstop=0.06, tstep=1.0 / 192000, gm=gm, amp=0.0, freq=100.0)
+        # The kick injects about 40 uV; a decaying ring is far below 1 mV by the last quarter,
+        # a sustained or saturated oscillation is far above it.
         a = np.abs(y - y.mean())
         q = len(a) // 4
-        early, late = a[q:2 * q].max(), a[3 * q:].max()
-        return late > early * 1.5
+        return a[3 * q:].max() > 1e-3
     lo, hi = 0.0, 0.1
     for _ in range(14):
         mid = 0.5 * (lo + hi)
