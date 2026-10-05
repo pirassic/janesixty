@@ -41,6 +41,14 @@ jobs:
           echo "au=$(find build -name 'Jane-Sixty.component' -type d | head -1)" >> "$GITHUB_OUTPUT"
           echo "vst3=$(find build -name 'Jane-Sixty.vst3' -type d | head -1)" >> "$GITHUB_OUTPUT"
           echo "app=$(find build -name 'Jane-Sixty.app' -type d | head -1)" >> "$GITHUB_OUTPUT"
+      - name: Ad-hoc sign bundles
+        run: |
+          for b in "${{ steps.art.outputs.au }}" "${{ steps.art.outputs.vst3 }}" "${{ steps.art.outputs.app }}"; do
+            chmod -R u+rwX "$b"
+            find "$b/Contents/MacOS" -type f -exec chmod +x {} +
+            codesign --force --deep --options runtime --timestamp=none -s - "$b"
+            codesign --verify --deep --strict "$b"
+          done
       - name: Install AU for validation
         run: |
           mkdir -p ~/Library/Audio/Plug-Ins/Components
