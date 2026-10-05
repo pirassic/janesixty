@@ -19,11 +19,13 @@ namespace jane60
 /// here so they are easy to find and replace (research plan section 1.5).
 struct VcfMapping
 {
-    /// Cutoff slider: octaves per slider unit, anchored at the 248 Hz point.
-    /// assumed: linear in octaves between ~38 Hz (0) and ~19.5 kHz (10). A trial at 1.0
-    /// put FREQ 8..10 above anything the hardware reaches and was heard as noise; the
-    /// ngspice sweep in phase 4 settles it.
-    double octavesPerSliderUnit = 0.9;
+    /// Cutoff slider: octaves per slider unit, anchored at the measured 248 Hz at FREQ 3.
+    /// 1.33 = the 13.3-octave cutoff span of the Juno-6 (4 Hz to 40 kHz) and Juno-106
+    /// (5 Hz to 50 kHz) specifications over the 10 slider units; it also puts the ENV
+    /// full depth at 10.9 octaves, matching the published 10.8 to 11. Confirmed against
+    /// the factory demo recording (tools/listen): at 0.9 the plugin sat 10 to 20 dB dark
+    /// above 2 kHz on patches with FREQ above 5, at 1.33 within a few dB. Tagged spec-derived.
+    double octavesPerSliderUnit = 1.33;
 
     /// Resonance slider position at which k reaches 4 (self-oscillation threshold).
     /// assumed: plugin-derived 0.75..0.8 of travel.

@@ -22,3 +22,18 @@ Open questions for phase 4 (ngspice) or a bench capture: FREQ slider slope, ENV 
 ## 2026-10-05, after the safety-stage build
 
 Owner: high VCA LEVEL soft-clips; is that consistent with the original? Answer: the stage heard was the plugin's safety limiter, not a component. The original's overload path is the chorus board's BBD input (no compander), pinned by the Service Notes bias procedure at 6 Vp-p (LEVEL 0) at the chorus input. That path is now modelled in its place (wet path only, before the BBD, `chorus.bbdClipVpp`), and the summer gains follow the schematic (wet 0.83 of dry) instead of the Hera fit, which lowers the wet level by about 5.5 dB relative to the previous build. The safety stage stays at -1 dBFS.
+
+## 2026-10-05, measured comparison against the demo recording
+
+The owner supplied the demo's audio (128 kbps MP3) with chapter times. `tools/listen/pitches.py` estimates each segment's register, `RenderPatches` plays every factory patch in that register through the full DSP chain, and `compare_reference.py` compares band balance (sub, low, mid, hi-mid, high), spectral tilt, stereo width and attack time per patch.
+
+Finding: with the FREQ slider at 0.9 octaves per unit the plugin was dark on nearly every patch. Third-octave spectra of Strings 1 (FREQ 7, no ENV) show the recording as a plain 6 dB/octave sawtooth out to 14 kHz, i.e. the real filter is effectively open at FREQ 7, where the plugin rolled off at 24 dB/octave from about 2.5 kHz. Mean difference (plugin minus reference) over 56 patches:
+
+| slope (oct/unit) | mid | hi-mid | high | tilt (dB/oct) |
+|---|---|---|---|---|
+| 0.9 | -6.1 | -10.3 | -19.5 | -3.4 |
+| 1.2 | -5.3 | -7.1 | -11.8 | -1.6 |
+| 1.33 | -4.8 | -6.3 | -9.6 | -1.0 |
+| 1.5 | -4.4 | -5.3 | -7.2 | -0.4 |
+
+Patches with FREQ above 5 come within 2 to 4 dB at 1.33; the residual sits in the FREQ 3 to 5 group (about -8 dB in the mids), which no slope fixes with the anchor pinned, so it points at the mixer levels (sub, pulse) or the PWM law rather than the filter. Adopted 1.33: the spec-derived span, consistent with the ENV depth. The earlier 1.0 trial had been judged with the DCO aliasing bug present, which is why it was heard as noise at the top of the slider.
