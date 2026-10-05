@@ -56,5 +56,26 @@ The hardware loses passband with resonance about as the 0.308 model does (the la
 - The external findings note also quotes R4 = 12 k and R7 / R11 = 33 k; the schematic shows R14 10 k and 68 k stage resistors, so its derived 0.37 coefficient is not used.
 - Voice mixer resistor values (saw / pulse / sub / noise legs) still unread; the mixer ratios remain plugin-derived.
 
-## Assumed values
-Every entry in `calibration/juno60.json` whose source starts with `assumed` (`Calibration::assumedKeys()`): vcf.qCompensation, env.timingCapNf, chorus.dryGain and wetGain were assumed until this step and now carry schematic sources; chorus.bbdClipRoomV, voicing.lowShelfDb and voicing.lowShelfHz remain assumed. The recording cannot pin the shelf: once the demo's bass line is rendered (listening notes 2026-10-05) the sub band agrees within the method's 2 to 3 dB noise with the shelf in; its uncertainty is about +-1.5 dB.
+## Assumed values (phase 4 exit list, 2026-10-05)
+Every entry in `calibration/juno60.json` whose source starts with `assumed` (`Calibration::assumedKeys()`), with its uncertainty and what it touches. vcf.qCompensation, chorus.dryGain and chorus.wetGain were assumed earlier and now carry schematic sources.
+
+| key | value | uncertainty | effect if wrong | how to close |
+|---|---|---|---|---|
+| `vcf.trimOffsetOct` | 1.0 oct | +-0.3 oct (per-patch best offsets 0.64 to 1.25, several at the sweep limit) | every cutoff shifts; brightness of the whole bank | condition layer: user setting (Service Notes trim / demo unit); a bench sweep of a trimmed unit settles the manual side |
+| `env.timingCapNf` | 47 nF | +-50 % | none: loaded but unused; the ADSR time tables are measured and the capacitor would only matter for a component-level envelope | read it off schematic p.9 or drop the key |
+| `chorus.bbdClipVpp` (knee; source is a test condition, not `assumed`) and `chorus.bbdClipRoomV` | 6 Vp-p, 1.5 V | knee +-1.5 V, room +-1 V | overload shape of the wet path on six-voice chords above LEVEL +3; silent below (chords sit 10 dB under the knee at LEVEL 0) | MN3009 input THD sweep at the bias point, or Holters & Parker's measured curve |
+| `voicing.lowShelfDb` | +1.0 dB | +-1.5 dB (the recording's sub band agrees within the method's noise with it in, listening notes 2026-10-05) | low end 150 Hz down | none from the demo; a line recording of a known unit, or zero it as a user voicing |
+| `voicing.lowShelfHz` | 150 Hz | +-50 Hz | as above | as above |
+
+Assumptions that live in code rather than the file (comments say `assumed`), none pinned by a source:
+
+| where | value | effect |
+|---|---|---|
+| `VcfMapping::selfOscSliderPos` (Voice.h) | RES 7.8 reaches k = 4 | where self-oscillation starts on the slider; bank 7 patches |
+| bender to VCF (Voice.h) | +-2 oct at full | bender VCF depth only |
+| noise bleed at NOISE 0 (Voice.h) | -100 dB | lets self-oscillation start; inaudible |
+| manual PW law, sub and noise slider tapers, mixer ratios (Voice.h, `plugin-derived`) | raised cosine, two-segment, -1.3 / -1.8 dB | mixer balance; the resistor legs on p.9 would replace them |
+| arpeggio clock and gate (Synth.cpp) | 1.5 to 50 Hz log, 0.55 gate | arpeggio only |
+| chorus mute fade, BBD hiss (ChorusBoard.h) | 150 ms, -72 dB re 4 Vp-p | switch feel; noise floor |
+
+`plugin-derived` sources (kept apart from `assumed`): vcf.qCompensation 0.308 (confirmed by the recording's loudness balance within 2 dB), env.sustainLevel law, the mixer ratios above.

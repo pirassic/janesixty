@@ -32,8 +32,8 @@ Measured against the demo recording (tools below), mean over 56 patches, plugin 
 
 ## Open items, in priority order
 1. ~~Sub band~~ closed 2026-10-05: the 6 dB was the demo's left-hand bass line missing from the render phrase, not the model (`pitches.py` now renders it; sub mean +1.4 dB). `voicing.lowShelfDb` stays assumed, inside the noise.
-2. **Attack**: owner hears the video slightly more aggressive. Not yet measured cleanly (the onset measure is noisy on chorus patches). Candidates: VCA gate rise (3 ms, published), ENV minimum attack, DCO reset transient.
-3. **Chorus width** -3.5 dB on chorus patches: wet level or wet brightness; the stereo side channel is the measure.
+2. ~~Attack~~ closed 2026-10-05 pending the owner's ear: the plugin's rises are faster than the recording's everywhere (5 against 26 ms on ATTACK 0), the recording's rises are the performance (an MP3 round trip does not slow the plugin's), no click above the closed filter on Celesta, and a 0.3 ms minimum attack changes nothing. Likely cause of the impression: the old 0.49 master gain put chord peaks into the safety stage's tanh. Owner re-listens with the 0.22 build.
+3. ~~Chorus width~~ closed 2026-10-05: per band the side channel is a uniform 1.2 dB low (mode I -1.4/-1.3/-1.1/-0.1 dB), the -3.5 was the tonal balance leaking into the broadband ratio. Inside the schematic ratio's tolerance; left.
 4. **Condition layer / settings**: expose `vcf.trimOffsetOct` as a user choice (Service Notes trim vs demo unit) with the planned voice spread and drive controls.
 5. **BA662 input weighting** (research only): a transistor-level model or a bench sweep.
 6. Calibration report: list every `assumed` key with its uncertainty (phase 4 exit criterion).
