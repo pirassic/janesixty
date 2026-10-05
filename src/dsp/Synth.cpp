@@ -24,6 +24,7 @@ void Synth::prepare (const Calibration& cal, double sampleRate, double a4Hz)
     shelfL_.set (cal.voicing.lowShelfHz, sampleRate);
     shelfR_.set (cal.voicing.lowShelfHz, sampleRate);
     shelfGainMinusOne_ = std::pow (10.0, cal.voicing.lowShelfDb / 20.0) - 1.0;
+    sumGain_ = cal.vca.sumGainPerVoice * cal.vca.sumToChorusInput;
     for (auto& v : voices_)
     {
         v.configure (cal, sampleRate);
@@ -293,7 +294,9 @@ void Synth::render (float* left, float* right, int numSamples, const std::vector
             sum += v.tick (lfo, nz, benderVcfVolts);
         }
 
-        const double pre = hpf_.process (sum) * levelGain;
+        // Voice summer and the divider to SIG OUT: the chorus board (HPF, LEVEL VCA, BBDs)
+        // works in volts at TP8, which is where its 6 Vp-p bias point is defined.
+        const double pre = hpf_.process (sum * sumGain_) * levelGain;
         double oL, oR;
         chorus_.process (pre, oL, oR);
         if (shelfGainMinusOne_ != 0.0)
@@ -301,7 +304,7 @@ void Synth::render (float* left, float* right, int numSamples, const std::vector
             oL += shelfGainMinusOne_ * shelfL_.process (oL);
             oR += shelfGainMinusOne_ * shelfR_.process (oR);
         }
-        const double g = 0.045 * volume;
+        const double g = 0.49 * volume; // same loudness as before the summer gain was modelled
         left[i] = static_cast<float> (outputStage (oL * g));
         if (right != nullptr) right[i] = static_cast<float> (outputStage (oR * g));
     }

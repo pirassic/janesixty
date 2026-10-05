@@ -90,7 +90,9 @@ struct Calibration
 
     struct Vca
     {
-        double voiceOutVpp = 4.0;          ///< saw at C4, VCA GAIN target
+        double voiceOutVpp = 4.0;          ///< saw at C4, VCA GAIN target (TP4)
+        double sumGainPerVoice = 3.3 / 27.0; ///< IC23 summer: R50 27 k per voice into R369 3.3 k
+        double sumToChorusInput = 10.0 / 13.3; ///< R370 3.3 k / R371 10 k divider to TP8 (SIG OUT)
         double gateRiseMs = 3.0;
         double gateFallMs = 6.0;
     } vca;

@@ -45,7 +45,9 @@
   },
 
   "vca": {
-    "voiceOutVpp": { "value": 4.0, "source": "service-notes p.23 adj.5-1" },
+    "voiceOutVpp": { "value": 4.0, "source": "service-notes p.23 adj.5-1 (TP4)" },
+    "sumGainPerVoice":   { "value": 0.12222, "source": "schematic p.9: each voice through R50 27 k into the IC23 (TA75558) summer with R369 3.3 k feedback" },
+    "sumToChorusInput":  { "value": 0.75188, "source": "schematic p.9: R370 3.3 k series, R371 10 k to ground, to TP8 / SIG OUT (the chorus board input)" },
     "gateRiseMs":  { "value": 3.0, "source": "published-measurement pendragon-andyh/Juno60" },
     "gateFallMs":  { "value": 6.0, "source": "published-measurement pendragon-andyh/Juno60" }
   },

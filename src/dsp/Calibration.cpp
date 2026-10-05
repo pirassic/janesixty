@@ -157,6 +157,8 @@ Calibration Calibration::fromJson (std::string_view jsonText)
     }
 
     c.vca.voiceOutVpp = r.number ("vca.voiceOutVpp");
+    c.vca.sumGainPerVoice = r.number ("vca.sumGainPerVoice");
+    c.vca.sumToChorusInput = r.number ("vca.sumToChorusInput");
     c.vca.gateRiseMs  = r.number ("vca.gateRiseMs");
     c.vca.gateFallMs  = r.number ("vca.gateFallMs");
 

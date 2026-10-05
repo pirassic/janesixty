@@ -68,6 +68,7 @@ private:
     ChorusBoard chorus_;
     OnePoleLp shelfL_, shelfR_;   // provisional output voicing (Calibration::Voicing)
     double shelfGainMinusOne_ = 0.0;
+    double sumGain_ = 1.0;        // voice summer and divider to the chorus input (volts at TP8)
     std::array<Voice, kVoices> voices_;
 
     int nextVoice_ = 0;          // rotary assignment pointer

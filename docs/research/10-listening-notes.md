@@ -41,3 +41,7 @@ Patches with FREQ above 5 come within 2 to 4 dB at 1.33; the residual sits in th
 ## 2026-10-05, resonance compensation against the recording
 
 Relative loudness of resonant patches (RES 1.5 to 7) against non-resonant ones matches the plugin's 0.308 compensation within 2 dB; the schematic-derived 2.4 would make them 7 to 8 dB too loud. Kept 0.308. See the calibration report.
+
+## 2026-10-05, overload on organ, celesta, piano at moderate LEVEL
+
+Owner: distortion that LEVEL drives and VOLUME cannot remove. Cause: the BBD overload point (6 Vp-p at TP8) was right, but the plugin fed the chorus board the raw voice sum, eleven times hotter than the hardware, which sums voices at 0.122 each and divides by 0.75 again before TP8 (schematic p.9). Both gains are now modelled; the master gain is raised to keep the output level. Chords now sit about 10 dB below the BBD knee at LEVEL 0 and only LEVEL +5 with six voices reaches it, which matches owners' reports of the chorus gritting up only on very hot patches.
