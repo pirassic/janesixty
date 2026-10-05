@@ -87,7 +87,7 @@ Layout createLayout()
 
     l.add (slider (benderDco, "Bender DCO", 0.0f));
     l.add (slider (benderVcf, "Bender VCF", 0.0f));
-    l.add (slider (volume, "Volume", 8.0f));
+    l.add (slider (volume, "Volume", 10.0f)); // default 10: the master gain sits 7 dB lower since the headroom fix
     l.add (slider (tune, "Tune", 0.0f, -50.0f, 50.0f));
 
     l.add (toggle (arpOn, "Arpeggio", false));

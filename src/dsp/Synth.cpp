@@ -304,7 +304,12 @@ void Synth::render (float* left, float* right, int numSamples, const std::vector
             oL += shelfGainMinusOne_ * shelfL_.process (oL);
             oR += shelfGainMinusOne_ * shelfR_.process (oR);
         }
-        const double g = 0.49 * volume; // same loudness as before the summer gain was modelled
+        // Master gain: a digital scale factor, not a component. 0.22 puts digital full scale above
+        // the chorus board's BBD overload point, so the safety stage below can only engage once the
+        // modelled overload is already audible (a 6-note chord at LEVEL +5 with chorus on). The
+        // earlier 0.49 clipped Mellow Piano chords with chorus I at LEVEL +2 and VOLUME 10 while
+        // the BBD input sat 4 dB under its knee. Listening notes 2026-10-05.
+        const double g = 0.22 * volume;
         left[i] = static_cast<float> (outputStage (oL * g));
         if (right != nullptr) right[i] = static_cast<float> (outputStage (oR * g));
     }
