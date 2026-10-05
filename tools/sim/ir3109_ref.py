@@ -59,12 +59,14 @@ Vkick kick 0 pulse(0 0.05 0 1u 1u 200u 10)
 R14 mix na 10k
 R7 na s1 68k
 R6 s1 0 560
-Rkick kick na 100k
+Rkick kick na 10Meg
 * BA662 (+) input: R5 47 k from the mixer side of R14, R2 1.5 k to ground (compensation)
 R5 mix np 47k
 R2 np 0 1.5k
-* BA662 (-) input: R3 100 k from the filter output, R1 1.5 k to ground (feedback)
-R3 y4 nm 100k
+* IR3109 output buffer (P-MOS followers on the chip): the feedback leg must not load the stage capacitor
+Ebuf y4b 0 y4 0 1
+* BA662 (-) input: R3 100 k from the buffered filter output, R1 1.5 k to ground (feedback)
+R3 y4b nm 100k
 R1 nm 0 1.5k
 * BA662 output current into node A; small-signal gm = GM, tanh limited at 2Vt
 Bres 0 na I = {gm}*VT2*tanh((v(np)-v(nm))/VT2)
