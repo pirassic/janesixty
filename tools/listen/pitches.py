@@ -2,13 +2,48 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 """Estimates the notes played in each reference segment (dominant fundamental per 100 ms frame,
 by harmonic product spectrum) and writes a phrase file for RenderPatches: one line per note,
-'patch startSeconds midiNote durationSeconds'. The render then sits in the demo's register."""
+'patch startSeconds midiNote durationSeconds'. The render then sits in the demo's register.
+
+The demo player accompanies most patches with a left-hand bass line (82 to 150 Hz on the
+harpsichords, guitar, celesta) that the dominant-pitch estimate misses behind the melody.
+Its register is read separately from the 40 to 150 Hz band in frames where that band sits
+within BASS_DB of the broadband level, and a bass note is added under the triad and alone.
+Without it the plugin renders measured 6 dB light below 150 Hz against the recording
+(listening notes, 2026-10-05)."""
 import csv, sys
 import numpy as np
 sys.path.insert(0, "tools/listen")
 import compare_reference as c
 
 SR = 48000
+BASS_DB = 18   # sub band within this of the 150 Hz to 6 kHz band counts as a played bass note
+
+def bandpass(x, lo, hi):
+    X = np.fft.rfft(x)
+    f = np.fft.rfftfreq(len(x), 1 / SR)
+    X[(f < lo) | (f > hi)] = 0
+    return np.fft.irfft(X, len(x))
+
+def bass_note(seg):
+    """Median MIDI note of the sub band where it carries a played note, else None."""
+    sub = bandpass(seg, 40, 150)
+    bb = bandpass(seg, 150, 6000)
+    fr = int(0.2 * SR)
+    n = len(seg) // fr
+    notes = []
+    for i in range(n):
+        a, b = i * fr, (i + 1) * fr
+        ls = np.sqrt((sub[a:b] ** 2).mean()) + 1e-9
+        lb = np.sqrt((bb[a:b] ** 2).mean()) + 1e-9
+        if 20 * np.log10(ls / lb) < -BASS_DB:
+            continue
+        sp = np.abs(np.fft.rfft(sub[a:b] * np.hanning(fr), 4 * fr))
+        f = np.fft.rfftfreq(4 * fr, 1 / SR)
+        sel = (f >= 40) & (f < 150)
+        notes.append(int(round(69 + 12 * np.log2(f[sel][sp[sel].argmax()] / 440.0))))
+    if len(notes) < max(3, n // 5):   # a bass line, not an onset thump: a fifth of the frames
+        return None
+    return int(np.median(notes))
 
 def frame_pitch(x):
     n = len(x)
@@ -50,7 +85,11 @@ def main():
             t += 2.5
         for m in (q[1], q[1] + 4, q[1] + 7):
             out.append(f"{num} {t:.2f} {m} 2.0")
-        print(num, name, "notes", list(q))
+        bass = bass_note(seg)
+        if bass is not None and bass < q[1]:
+            out.append(f"{num} {t:.2f} {bass} 2.0")      # under the triad
+            out.append(f"{num} {t + 2.5:.2f} {bass} 1.5")  # and alone
+        print(num, name, "notes", [int(v) for v in q], "bass", bass)
     with open("reference/phrases.txt", "w") as f:
         f.write("\n".join(out) + "\n")
 

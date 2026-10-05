@@ -57,4 +57,4 @@ The hardware loses passband with resonance about as the 0.308 model does (the la
 - Voice mixer resistor values (saw / pulse / sub / noise legs) still unread; the mixer ratios remain plugin-derived.
 
 ## Assumed values
-Every entry in `calibration/juno60.json` whose source starts with `assumed` (`Calibration::assumedKeys()`): vcf.qCompensation, env.timingCapNf, chorus.dryGain and wetGain were assumed until this step and now carry schematic sources; chorus.bbdClipRoomV, voicing.lowShelfDb and voicing.lowShelfHz remain assumed.
+Every entry in `calibration/juno60.json` whose source starts with `assumed` (`Calibration::assumedKeys()`): vcf.qCompensation, env.timingCapNf, chorus.dryGain and wetGain were assumed until this step and now carry schematic sources; chorus.bbdClipRoomV, voicing.lowShelfDb and voicing.lowShelfHz remain assumed. The recording cannot pin the shelf: once the demo's bass line is rendered (listening notes 2026-10-05) the sub band agrees within the method's 2 to 3 dB noise with the shelf in; its uncertainty is about +-1.5 dB.
