@@ -128,7 +128,8 @@ struct Calibration
         double bbdClipVpp = 6.0;             ///< chorus input level (LEVEL 0) at which the BBD just does not clip
         double bbdClipRoomV = 1.5;           ///< soft region above the knee (assumed)
         double noiseDbRe4Vpp = -84.0;        ///< BBD hiss, rms re a 4 Vp-p sine (datasheet typical)
-        bool bbdSincBandwidth = true;        ///< BBD sample-and-hold roll-off tracking the clock (Holters & Parker)
+        bool bbdSincBandwidth = true;        ///< BBD sample-and-hold roll-off tracking the clock (fractional model only)
+        int bbdModel = 1;                    ///< 1: Holters & Parker variable-rate model; 0: fractional delay with biquads
         /// Pre-BBD chain: one real pole and two second-order sections (Sallen-Key with emitter followers).
         double preRealHz = 7410.0, preAHz = 9690.0, preAQ = 0.55, preBHz = 10340.0, preBQ = 1.24;
         /// Post-BBD chain per channel.

@@ -688,3 +688,70 @@ TEST_CASE ("extras: the off path is bit-identical; velocity, per-note bend and p
     const std::vector<float> plainTail (plain.begin() + 4800, plain.end()), pressedTail (pressed.begin() + 4800, pressed.end());
     CHECK_THAT (peak (pressedTail) / peak (plainTail), WithinRel (0.6, 0.05));
 }
+
+#include "dsp/chorus/BbdHoltersParker.h"
+
+TEST_CASE ("chorus: Holters-Parker BBD on a fixed clock matches the closed-form delay and gain")
+{
+    // A 1 kHz sine through the model with the delay held at 3.5 ms (clock 36.6 kHz) should come
+    // out delayed by 3.5 ms with amplitude |Hin| |Hout| sinc(f / fBBD) (the paper's section 4).
+    const double sr = 96000.0;
+    const double delayMs = 3.5, f0 = 1000.0;
+    BbdHoltersParker::InputFilter in;
+    in.prepare (sr);
+    BbdHoltersParker bbd;
+    bbd.prepare (sr, 256, 6.0);
+    std::vector<double> x, y;
+    const int n = static_cast<int> (0.2 * sr);
+    for (int i = 0; i < n; ++i)
+    {
+        const double u = std::sin (2.0 * 3.14159265358979323846 * f0 * i / sr);
+        y.push_back (bbd.process (in, delayMs, [] (double v) { return v; }));
+        in.push (u);
+        x.push_back (u);
+    }
+    // Expected gain from Table 1 (continuous-time partial fractions) at 1 kHz.
+    auto gainAt = [] (const std::array<BbdHoltersParker::Section, BbdHoltersParker::kSections>& s, double f)
+    {
+        std::complex<double> h (0.0, 0.0);
+        const std::complex<double> jw (0.0, 2.0 * 3.14159265358979323846 * f);
+        for (const auto& sec : s)
+        {
+            h += sec.r / (jw - sec.p);
+            if (sec.pair) h += std::conj (sec.r) / (jw - std::conj (sec.p));
+        }
+        return std::abs (h);
+    };
+    const double fBbd = 256.0 / (2.0 * delayMs * 1e-3);
+    const double sincTerm = std::sin (3.14159265358979323846 * f0 / fBbd) / (3.14159265358979323846 * f0 / fBbd);
+    const double expected = gainAt (BbdHoltersParker::inputSections(), f0) * gainAt (BbdHoltersParker::outputSections(), f0) * sincTerm;
+    double peak = 0.0;
+    for (int i = n / 2; i < n; ++i) peak = std::max (peak, std::abs (y[static_cast<std::size_t> (i)]));
+    INFO ("expected gain " << expected << " measured " << peak);
+    CHECK_THAT (peak, WithinRel (expected, 0.03));
+    // Delay: a 100 Hz tone (period longer than the search) so the cross-correlation lag is unambiguous.
+    BbdHoltersParker::InputFilter in2;
+    in2.prepare (sr);
+    BbdHoltersParker bbd2;
+    bbd2.prepare (sr, 256, 6.0);
+    x.clear(); y.clear();
+    for (int i = 0; i < n; ++i)
+    {
+        const double u = std::sin (2.0 * 3.14159265358979323846 * 100.0 * i / sr);
+        y.push_back (bbd2.process (in2, delayMs, [] (double v) { return v; }));
+        in2.push (u);
+        x.push_back (u);
+    }
+    double best = -1e9; int bestLag = 0;
+    for (int lag = 0; lag < static_cast<int> (0.006 * sr); ++lag)
+    {
+        double acc = 0.0;
+        for (int i = n / 2; i < n; ++i) acc += y[static_cast<std::size_t> (i)] * x[static_cast<std::size_t> (i - lag)];
+        if (acc > best) { best = acc; bestLag = lag; }
+    }
+    // The filters add their own group delay at 1 kHz (about 0.1 ms in total); allow for it.
+    const double lagMs = 1000.0 * bestLag / sr;
+    INFO ("lag " << lagMs << " ms");
+    CHECK (lagMs > delayMs - 0.05);
+    CHECK (lagMs < delayMs + 0.3);
+}

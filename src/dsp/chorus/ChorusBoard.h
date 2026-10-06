@@ -14,6 +14,7 @@
 
 #include "dsp/Calibration.h"
 #include "dsp/PanelState.h"
+#include "dsp/chorus/BbdHoltersParker.h"
 
 #include <algorithm>
 #include <array>
@@ -146,6 +147,9 @@ public:
         stages_ = static_cast<double> (c.bbdStages);
         sincL_.set (20000.0, sampleRate);
         sincR_.set (20000.0, sampleRate);
+        hpIn_.prepare (sampleRate);
+        hpL_.prepare (sampleRate, c.bbdStages, maxDelay + 1.0);
+        hpR_.prepare (sampleRate, c.bbdStages, maxDelay + 1.0);
         phase_ = 0.0;
         mute_ = 0.0;
         mode_ = ChorusSwitch::off;
@@ -180,29 +184,38 @@ public:
         const double dL = mid + half * tri;
         const double dR = m.stereo ? mid - half * tri : dL;
 
-        // Pre-filter (shared), BBD lines. The MN3009 input has no compander: the bias trim leaves
-        // 6 Vp-p (LEVEL 0) just clean (datasheet: THD 2.5 % at 1.5 Vrms, a wall near 2 Vrms), so hot
-        // patches and big chords overload the wet path while the dry path stays linear.
-        const double pre = bbdInput (preReal_.process (preB_.process (preA_.process (in))));
-        double wL = lineL_.process (pre, dL);
-        double wR = lineR_.process (pre, dR);
-        // The BBD output holds each sample for one clock period (Holters & Parker): a sinc(f / fBBD)
-        // roll-off with fBBD = stages / (2 delay), 24 to 77 kHz over the sweep. A one-pole tracking
-        // the sinc's -3 dB point (0.443 fBBD) stands in for it below the host Nyquist.
-        if (cal_.bbdSincBandwidth)
+        double wL, wR;
+        if (cal_.bbdModel == 1)
         {
-            wL = sincL_.processTracking (wL, 0.443 * stages_ / (2.0 * dL * 1e-3));
-            wR = sincR_.processTracking (wR, 0.443 * stages_ / (2.0 * dR * 1e-3));
+            // Holters & Parker: the board's own filters do the resampling to and from the BBD clock.
+            // The MN3009 input has no compander: the bias trim leaves 6 Vp-p (LEVEL 0) just clean
+            // (datasheet: THD 2.5 % at 1.5 Vrms, a wall near 2 Vrms), so hot patches and big chords
+            // overload the wet path while the dry path stays linear. Clip at each sampled input.
+            auto clip = [this] (double x) { return bbdInput (x); };
+            wL = hpL_.process (hpIn_, dL, clip);
+            wR = hpR_.process (hpIn_, dR, clip);
+            hpIn_.push (in);
+            const double hiss = noiseAmp_ * noiseGain_;
+            wL = (wL + noise() * hiss) * wetGain_ * mute_;
+            wR = (wR + noise() * hiss) * wetGain_ * mute_;
         }
-
-        // No compander: a constant hiss from the BBDs (calibration chorus.noiseDbRe4Vpp, assumed).
-        const double hiss = noiseAmp_ * noiseGain_;
-        wL += noise() * hiss;
-        wR += noise() * hiss;
-
-        // Post filters, wet gain, mute fade, summers.
-        wL = postReal_[0].process (postB_[0].process (postA_[0].process (wL))) * wetGain_ * mute_;
-        wR = postReal_[1].process (postB_[1].process (postA_[1].process (wR))) * wetGain_ * mute_;
+        else
+        {
+            // Fractional delay line with the biquad chains (phase 2 model, kept for comparison).
+            const double pre = bbdInput (preReal_.process (preB_.process (preA_.process (in))));
+            wL = lineL_.process (pre, dL);
+            wR = lineR_.process (pre, dR);
+            if (cal_.bbdSincBandwidth)
+            {
+                wL = sincL_.processTracking (wL, 0.443 * stages_ / (2.0 * dL * 1e-3));
+                wR = sincR_.processTracking (wR, 0.443 * stages_ / (2.0 * dR * 1e-3));
+            }
+            const double hiss = noiseAmp_ * noiseGain_;
+            wL += noise() * hiss;
+            wR += noise() * hiss;
+            wL = postReal_[0].process (postB_[0].process (postA_[0].process (wL))) * wetGain_ * mute_;
+            wR = postReal_[1].process (postB_[1].process (postA_[1].process (wR))) * wetGain_ * mute_;
+        }
         outL = in * cal_.dryGain + wL * cal_.wetGain;
         outR = in * cal_.dryGain + wR * cal_.wetGain;
     }
@@ -238,6 +251,8 @@ private:
     std::array<OnePoleLp, 2> postReal_ {};
     OnePoleLp sincL_, sincR_;
     double stages_ = 256.0;
+    BbdHoltersParker::InputFilter hpIn_;
+    BbdHoltersParker hpL_, hpR_;
     double fadeCoef_ = 0.0, mute_ = 0.0, wetGain_ = 1.0, phase_ = 0.0;
     double noiseAmp_ = 0.0, noiseGain_ = 1.0;
     double clipKnee_ = 3.0, clipRoom_ = 1.5;

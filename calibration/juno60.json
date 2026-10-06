@@ -86,6 +86,7 @@
     ],
     "modesSource": "published-measurement pendragon-andyh/Juno60 (service-notes p.7 annotates ~0.5 / 0.8 Hz)",
     "bbdStages":     { "value": 256, "source": "service-notes p.11, p.26 (MN3009); datasheet: 256 stages, delay 0.64 to 12.8 ms at 200 to 10 kHz clock" },
+    "bbdModel": { "value": 1, "source": "published Holters & Parker DAFx-18 Algorithm 1 with their Table 1 Juno-60 filter coefficients (src/dsp/chorus/BbdHoltersParker.h): the BBD as a fixed-length queue at its own clock, the board's input filter evaluated at each even clock edge and the output filter driven by the staircase steps at each odd edge. 0 selects the phase 2 fractional line with the biquad chains and the sinc one-pole, kept for comparison" },
     "bbdSincBandwidth": { "value": 1, "source": "published Holters & Parker DAFx-18 eq. for a constant clock: the BBD output holds each sample for one clock period, a sinc(f / fBBD) roll-off with fBBD = stages / (2 delay); the measured delay sweep (1.66 to 5.35 ms) gives 77 to 24 kHz, the paper quotes a 26 kHz minimum; datasheet Gi-fi: -3 dB near 14 kHz at 40 kHz clock. Modelled as a one-pole tracking 0.443 fBBD (the sinc -3 dB point)" },
     "bbdPathGainDb": { "value": 2.3, "source": "published-measurement Holters & Parker DAFx-18" },
     "dryGain":       { "value": 1.0,  "source": "schematic p.11: IC8 summers, dry through R89 / R88 39 k into 100 k feedback (R95 / R91), normalised to 1" },
