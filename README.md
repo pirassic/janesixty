@@ -2,7 +2,7 @@
 
 Open-source, component-modelled recreation of the Roland Juno-60 as a native macOS AU and VST3 plugin and standalone app, with a planned scale-and-chord performance layer. Vendor: clevergear. Licence: GPLv3 (JUCE under AGPLv3).
 
-Status: phase 4 (calibration) complete; next is phase 5 (velocity and MPE opt-ins, Windows).
+Status: phase 5 (Windows build, velocity and MPE opt-ins) in progress; phase 4 (calibration) complete.
 
 ## Fidelity
 
@@ -27,7 +27,7 @@ cmake --build build
 ctest --test-dir build
 ```
 
-Targets: `Jane60_AU`, `Jane60_VST3`, `Jane60_Standalone` (macOS). On Linux, configure with `-DJANE60_BUILD_PLUGIN=OFF` to build the DSP library and tests only, or install `libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxinerama-dev libxext-dev libxi-dev libfreetype-dev libfontconfig1-dev` for the Standalone and VST3 (compile check only; not a release platform).
+Targets: `Jane60_AU`, `Jane60_VST3`, `Jane60_Standalone` (macOS); `Jane60_VST3`, `Jane60_Standalone` (Windows x64, Visual Studio 2022: `cmake -S . -B build -A x64 && cmake --build build --config Release`). CI builds both and runs pluginval on each; the `jane60-windows-unsigned` artifact carries the Windows zips. On Linux, configure with `-DJANE60_BUILD_PLUGIN=OFF` to build the DSP library and tests only, or install `libasound2-dev libx11-dev libxrandr-dev libxcursor-dev libxinerama-dev libxext-dev libxi-dev libfreetype-dev libfontconfig1-dev` for the Standalone and VST3 (compile check only; not a release platform).
 
 Layout: `src/dsp` (framework-free DSP and calibration, no JUCE), `src/plugin` (JUCE processor and editor), `calibration/juno60.json` (every hardware constant with its source), `tests/unit` (Catch2), `docs/` (plan and research).
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Preset browser model: factory bank (from the chart), user presets as JSON
-// files under ~/Library/Audio/Presets/clevergear/Jane-Sixty/, A/B compare and
+// files under ~/Library/Audio/Presets/clevergear/Jane-Sixty/ (macOS), %APPDATA%\clevergear\Jane-Sixty
+// (Windows) or ~/.config/clevergear/Jane-Sixty (Linux), A/B compare and
 // the "edited" flag. The audio thread never touches this; the editor and host
 // callbacks do.
 #pragma once

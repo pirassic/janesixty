@@ -21,8 +21,17 @@ PresetManager::PresetManager (juce::AudioProcessorValueTreeState& state, const s
 
 juce::File PresetManager::userFolder()
 {
+   #if JUCE_MAC
     return juce::File::getSpecialLocation (juce::File::userHomeDirectory)
         .getChildFile ("Library/Audio/Presets/clevergear/Jane-Sixty");
+   #elif JUCE_WINDOWS
+    // %APPDATA%\clevergear\Jane-Sixty
+    return juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
+        .getChildFile ("clevergear").getChildFile ("Jane-Sixty");
+   #else
+    return juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory)
+        .getChildFile ("clevergear").getChildFile ("Jane-Sixty");
+   #endif
 }
 
 void PresetManager::rescan()
