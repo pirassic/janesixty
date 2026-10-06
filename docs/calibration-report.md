@@ -77,17 +77,24 @@ Two corrections led here. The owner's reverse-engineered BA662 internal schemati
 
 Oscillation threshold with the corrected stage 1: 4.1 mA/V (a 0.2 mA BA662 tail), against the old 32.6 mA/V. `vcf.qCompensation` is now tagged schematic-derived. Two consequences for other parts of the model: the filter's passband gain from the mixer node is 6.8, not 1, which the VCA gain trim absorbs (the 4 Vp-p endpoint is measured), and the level into stage 1's OTA is mixer x 525 / 10 k rather than mixer x 560 / 68 560, so if the mixer node carries about 3 Vp-p (R37 15 k into R23 10 k, loaded by R14) the real drive sits about 4 dB above the model's default, inside the +-6 dB the drive setting offers. The passband loss the owners describe (research/03: "the volume doesn't drop much" on the 106) is the 7 dB of the 0.308 curve at full resonance, most of it above RES 5.
 
+### Chorus board from the datasheets and the paper (2026-10-06)
+The owner supplied the Service Notes p.11 scan, the Matsushita MN3009 and MN3101 datasheets, Holters and Parker (DAFx-18) and Raffel and Smith (DAFx-10). What they settle:
+- **Filters**: Holters and Parker's Table 1 (numerical analysis of the Juno-60 board) gives the input chain as a real pole at 46 580 rad/s with pairs at 55 482 +- 25 082i and 26 292 +- 59 437i, and the output chain as a real pole near 176 000 rad/s with pairs at 51 468 +- 21 4xxi and 26 276 +- 59 4xxi. Converted, these are 7.41 kHz, 9.69 kHz Q 0.55, 10.34 kHz Q 1.24, 28 kHz, 8.87 kHz Q 0.54 and 10.38 kHz Q 1.24: the jpcima set the model already used, now tagged published. The p.11 crop confirms the parts (R15 10 k, C7 2.2 nF, R18 / R19 3.3 k, R20 47 k, C10 2.2 nF, the 22 k Sallen-Key pairs).
+- **Overload**: the MN3009 THD curve sits at 0.4 % up to about 1.4 Vrms, passes 2.5 % at 1.5 Vrms (the datasheet's optimum-bias definition, which the Service Notes 6 Vp-p TP8 adjustment realises) and hits a wall near 2 Vrms. So the knee at 6 Vp-p TP8 is right by construction and the soft region above it is about 2.5 dB: `bbdClipRoomV` 1.5 (assumed) becomes 1.0 (datasheet).
+- **Noise**: S/N 88 dB typical from maximum output to noise, 0.2 mVrms maximum. Typical noise 60 uVrms at the BBD, 85 uVrms referred to TP8, -84.4 dB re a 4 Vp-p sine: the level the plugin had assumed, now datasheet-derived. The datasheet maximum is 10 dB worse, which is the aged-BBD setting.
+- **Bandwidth vs clock**: the BBD holds each sample for a clock period, a sinc(f / fBBD) roll-off (Holters and Parker). The measured delay sweep 1.66 to 5.35 ms is 77 to 24 kHz of clock (the paper quotes a 26 kHz minimum, the datasheet 14 kHz of bandwidth at 40 kHz). The model's ad hoc 8 % transfer-loss term is replaced by a one-pole tracking the sinc's -3 dB point, 0.443 fBBD, which moves 34 to 10.6 kHz over the sweep. Effect against the recording: see the listening notes.
+- **Not taken from the paper**: its variable-rate resampling model with the filters run at the BBD clock (the exact treatment of the clock sweep and its aliasing). The fractional delay line stays; that upgrade is phase 5 or later work, now with a published reference to build against.
+- **MN3101**: the clock driver; the delay range comes from the measured sweep, so its oscillator law is not needed by the model.
+
 ## Assumed values (phase 4 exit list, 2026-10-05)
-Every entry in `calibration/juno60.json` whose source starts with `assumed` (`Calibration::assumedKeys()`), with its uncertainty and what it touches. vcf.qCompensation, chorus.dryGain and chorus.wetGain were assumed earlier and now carry schematic sources.
+Every entry in `calibration/juno60.json` whose source starts with `assumed` (`Calibration::assumedKeys()`), with its uncertainty and what it touches. vcf.qCompensation, chorus.dryGain and chorus.wetGain carry schematic sources; chorus.bbdClipRoomV and chorus.noiseDbRe4Vpp carry the MN3009 datasheet since 2026-10-06.
 
 | key | value | uncertainty | effect if wrong | how to close |
 |---|---|---|---|---|
 | `vcf.trimOffsetOct` | 1.0 oct | +-0.3 oct (per-patch best offsets 0.64 to 1.25, several at the sweep limit) | every cutoff shifts; brightness of the whole bank | user setting done (Settings, "Match the factory demo unit", default on; stored in plugin state); a bench sweep of a trimmed unit would settle the manual side |
 | `env.timingCapNf` | 47 nF | +-50 % | none: loaded but unused; the ADSR time tables are measured and the capacitor would only matter for a component-level envelope | read it off schematic p.9 or drop the key |
-| `chorus.bbdClipVpp` (knee; source is a test condition, not `assumed`) and `chorus.bbdClipRoomV` | 6 Vp-p, 1.5 V | knee +-1.5 V, room +-1 V | overload shape of the wet path on six-voice chords above LEVEL +3; silent below (chords sit 10 dB under the knee at LEVEL 0) | MN3009 input THD sweep at the bias point, or Holters & Parker's measured curve |
 | `voicing.lowShelfDb` | +1.0 dB | +-1.5 dB (the recording's sub band agrees within the method's noise with it in, listening notes 2026-10-05) | low end 150 Hz down | none from the demo; a line recording of a known unit, or zero it as a user voicing |
 | `voicing.lowShelfHz` | 150 Hz | +-50 Hz | as above | as above |
-| `chorus.noiseDbRe4Vpp` | -84 dB | +-10 dB (unit and age dependent) | chorus hiss floor | user setting (chorus noise); a silent-input capture of one unit's chorus output |
 
 Assumptions that live in code rather than the file (comments say `assumed`), none pinned by a source:
 

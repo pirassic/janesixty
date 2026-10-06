@@ -599,3 +599,36 @@ TEST_CASE ("condition layer: drive changes only the filter's saturation, spread 
     // The key is the hiss at the BBD; the post filters and the wet gain take a few dB off by the output.
     CHECK_THAT (20.0 * std::log10 (hiss (1.0) / 1.4142), WithinAbs (cal().chorus.noiseDbRe4Vpp, 6.0));
 }
+
+TEST_CASE ("chorus: the BBD's clock-dependent bandwidth darkens the wet path more at the longest delay")
+{
+    // Hold the sweep at one end by driving a long sine and measuring the wet component at 8 kHz over
+    // a window short against the LFO; compare the LFO's two extremes.
+    const double sr = 96000.0;
+    auto wetLevelAt = [&] (double seconds)
+    {
+        ChorusBoard c;
+        c.prepare (cal().chorus, sr);
+        c.setMode (ChorusSwitch::I);
+        c.setNoiseGain (0.0);
+        const int n = static_cast<int> (seconds * sr);
+        double l = 0.0, r = 0.0, acc = 0.0;
+        int count = 0;
+        for (int i = 0; i < n; ++i)
+        {
+            const double x = 0.5 * std::sin (2.0 * 3.14159265358979323846 * 8000.0 * i / sr);
+            c.process (x, l, r);
+            if (i >= n - 1000) { const double w = l - x * cal().chorus.dryGain; acc += w * w; ++count; }
+        }
+        return std::sqrt (acc / count);
+    };
+    // Mode I: 0.513 Hz triangle starting at phase 0 (delay minimum); a quarter period later it is at
+    // the maximum. The ratio is what the sinc term predicts: 24 kHz vs 77 kHz clock at 8 kHz.
+    const double period = 1.0 / cal().chorus.modes[0].lfoRateHz;
+    const double atMin = wetLevelAt (period + 0.002);
+    const double atMax = wetLevelAt (period + 0.5 * period + 0.002);
+    const double ratioDb = 20.0 * std::log10 (atMax / atMin);
+    INFO ("wet 8 kHz level at the longest delay minus the shortest: " << ratioDb << " dB");
+    CHECK (ratioDb < -0.8);
+    CHECK (ratioDb > -4.0);
+}

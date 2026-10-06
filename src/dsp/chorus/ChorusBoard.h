@@ -15,6 +15,7 @@
 #include "dsp/Calibration.h"
 #include "dsp/PanelState.h"
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <vector>
@@ -55,6 +56,7 @@ public:
     void set (double fc, double sampleRate) noexcept
     {
         constexpr double pi = 3.14159265358979323846;
+        sr_ = sampleRate;
         const double g = std::tan (pi * fc / sampleRate);
         G_ = g / (1.0 + g);
         s_ = 0.0;
@@ -66,8 +68,18 @@ public:
         s_ = y + v;
         return y;
     }
+    /// One sample with a new corner (TPT form, stable under modulation). Corners above 0.45 fs
+    /// are held there, where the pole is effectively out of band.
+    double processTracking (double x, double fc) noexcept
+    {
+        constexpr double pi = 3.14159265358979323846;
+        const double g = std::tan (pi * std::min (fc, sr_ * 0.45) / sr_);
+        G_ = g / (1.0 + g);
+        return process (x);
+    }
 private:
     double G_ = 0, s_ = 0;
+    double sr_ = 48000.0;
 };
 
 /// One MN3009 line: fractional delay with transfer loss that grows as the clock slows.
@@ -131,6 +143,9 @@ public:
         noiseAmp_ = 1.4142 * std::pow (10.0, c.noiseDbRe4Vpp / 20.0) * std::sqrt (12.0);
         clipKnee_ = 0.5 * c.bbdClipVpp;
         clipRoom_ = c.bbdClipRoomV;
+        stages_ = static_cast<double> (c.bbdStages);
+        sincL_.set (20000.0, sampleRate);
+        sincR_.set (20000.0, sampleRate);
         phase_ = 0.0;
         mute_ = 0.0;
         mode_ = ChorusSwitch::off;
@@ -165,14 +180,20 @@ public:
         const double dL = mid + half * tri;
         const double dR = m.stereo ? mid - half * tri : dL;
 
-        // Pre-filter (shared), BBD lines, transfer loss vs clock (longer delay = slower clock).
-        // The MN3009 input has no compander: the bias trim leaves 6 Vp-p (LEVEL 0) just clean,
-        // so hot patches and big chords overload the wet path while the dry path stays linear.
+        // Pre-filter (shared), BBD lines. The MN3009 input has no compander: the bias trim leaves
+        // 6 Vp-p (LEVEL 0) just clean (datasheet: THD 2.5 % at 1.5 Vrms, a wall near 2 Vrms), so hot
+        // patches and big chords overload the wet path while the dry path stays linear.
         const double pre = bbdInput (preReal_.process (preB_.process (preA_.process (in))));
-        const double lossL = 1.0 - 0.08 * (dL - m.delayMinMs) / (m.delayMaxMs - m.delayMinMs + 1e-9);
-        const double lossR = 1.0 - 0.08 * (dR - m.delayMinMs) / (m.delayMaxMs - m.delayMinMs + 1e-9);
-        double wL = lineL_.process (pre, dL) * lossL;
-        double wR = lineR_.process (pre, dR) * lossR;
+        double wL = lineL_.process (pre, dL);
+        double wR = lineR_.process (pre, dR);
+        // The BBD output holds each sample for one clock period (Holters & Parker): a sinc(f / fBBD)
+        // roll-off with fBBD = stages / (2 delay), 24 to 77 kHz over the sweep. A one-pole tracking
+        // the sinc's -3 dB point (0.443 fBBD) stands in for it below the host Nyquist.
+        if (cal_.bbdSincBandwidth)
+        {
+            wL = sincL_.processTracking (wL, 0.443 * stages_ / (2.0 * dL * 1e-3));
+            wR = sincR_.processTracking (wR, 0.443 * stages_ / (2.0 * dR * 1e-3));
+        }
 
         // No compander: a constant hiss from the BBDs (calibration chorus.noiseDbRe4Vpp, assumed).
         const double hiss = noiseAmp_ * noiseGain_;
@@ -215,6 +236,8 @@ private:
     Biquad2 preA_, preB_;
     std::array<Biquad2, 2> postA_ {}, postB_ {};
     std::array<OnePoleLp, 2> postReal_ {};
+    OnePoleLp sincL_, sincR_;
+    double stages_ = 256.0;
     double fadeCoef_ = 0.0, mute_ = 0.0, wetGain_ = 1.0, phase_ = 0.0;
     double noiseAmp_ = 0.0, noiseGain_ = 1.0;
     double clipKnee_ = 3.0, clipRoom_ = 1.5;

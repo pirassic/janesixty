@@ -174,7 +174,7 @@ BBD clock = 256 / (2 x delay): **77 kHz to 24 kHz** for I/II, 39 to 35 kHz for I
 - **LFO**: TL082 Schmitt (47 k / 33 k, triangle peak ~+-9.5 V) + integrator (1 M, 100 nF); buffered triangle plus inverting unity stage for the anti-phase channel. Original mode-switch resistors not recoverable from the clone.
 - **Post-BBD**: both BBD output phases summed through 3.3 k + 3.3 k into 47 k parallel 2.2 nF (clock ripple cancel, ~28 to 45 kHz pole), then the same two Sallen-Key sections, 1 uF coupling, **2SK30 JFET mute** (gate driven by a slow RC: 2.2 uF with 150 k / 560 k / 330 k, delayed fade on chorus switching), then 39 k into the summer. jpcima's output set: pairs 8.87 kHz Q 0.54, 10.38 kHz Q 1.24, real 28 kHz; -3 dB ~8.8 kHz.
 - **Output summers**: two TL082 inverting summers, feedback 10 k, dry via 47 k, wet via 39 k, 1 k series to jacks (Juno-6 uses 100 k feedback). L = dry + BBD1, R = dry + BBD2.
-- Noise: no compander, so BBD noise and clock residue are a constant hiss and distortion is level dependent; BBD transfer loss grows as the clock slows, giving slight AM at the LFO rate.
+- Noise: no compander, so BBD noise and clock residue are a constant hiss and distortion is level dependent. MN3009 datasheet (owner-supplied, 2026-10-06): S/N 88 dB typ, noise 0.2 mVrms max (A-weighted, 100 kHz clock), THD 0.3 % typ at 0.78 Vrms and 2.5 % at 1.5 Vrms with a wall near 2 Vrms, insertion loss 0 dB +-4, bandwidth 12 kHz min at 40 kHz clock, clock 10 to 200 kHz, delay 0.64 to 12.8 ms. The bandwidth follows the clock as a sinc (sample-and-hold, Holters and Parker), not a transfer loss.
 
 ## 9. CPU, voice assignment, DCB
 

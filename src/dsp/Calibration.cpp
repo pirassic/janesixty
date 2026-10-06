@@ -204,6 +204,7 @@ Calibration Calibration::fromJson (std::string_view jsonText)
     c.chorus.bbdClipVpp    = r.number ("chorus.bbdClipVpp");
     c.chorus.bbdClipRoomV  = r.number ("chorus.bbdClipRoomV");
     c.chorus.noiseDbRe4Vpp = r.number ("chorus.noiseDbRe4Vpp");
+    c.chorus.bbdSincBandwidth = r.number ("chorus.bbdSincBandwidth") > 0.5;
     c.chorus.preRealHz  = r.number ("chorus.preRealHz");
     c.chorus.preAHz     = r.number ("chorus.preAHz");
     c.chorus.preAQ      = r.number ("chorus.preAQ");
