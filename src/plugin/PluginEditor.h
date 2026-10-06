@@ -45,7 +45,7 @@ private:
     // Modern strip (also in reference space)
     juce::TextButton prev_ { "<" }, next_ { ">" }, ab_ { "A" }, copy_ { "Copy" }, save_ { "Save" }, undo_ { "Undo" }, settings_ { "Settings" };
     juce::ComboBox presetBox_;
-    juce::Label edited_, hint_;
+    juce::Label edited_, hint_, extras_;
     int lastShownIndex_ = -1;
 
     // Standalone: replaces the window's title-bar "Options" button so there is one settings menu.

@@ -38,6 +38,27 @@ void Jane60Processor::prepareToPlay (double sampleRate, int)
     synth_.setPanel (params::readPanel (apvts_));
     synth_.prepare (calibration_, sampleRate, 440.0);
     applyCondition (true);
+    applyExtras (true);
+}
+
+void Jane60Processor::applyExtras (bool force) noexcept
+{
+    Extras e;
+    const int vd = velocityTo_.load();
+    e.velocityOn = vd != 0;
+    e.velocityTo = static_cast<Extras::Destination> (vd == 0 ? 3 : vd);
+    e.velocityAmount = velocityAmount_.load();
+    e.velocitySoft = velocitySoft_.load();
+    e.mpeOn = mpe_.load();
+    e.pressureTo = static_cast<Extras::Destination> (pressureTo_.load());
+    if (! force && extrasApplied_
+        && e.velocityOn == appliedExtras_.velocityOn && e.velocityTo == appliedExtras_.velocityTo
+        && std::abs (e.velocityAmount - appliedExtras_.velocityAmount) < 1e-9 && e.velocitySoft == appliedExtras_.velocitySoft
+        && e.mpeOn == appliedExtras_.mpeOn && e.pressureTo == appliedExtras_.pressureTo)
+        return;
+    appliedExtras_ = e;
+    extrasApplied_ = true;
+    synth_.setExtras (e);
 }
 
 void Jane60Processor::applyCondition (bool force) noexcept
@@ -77,10 +98,12 @@ void Jane60Processor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
         const auto m = meta.getMessage();
         MidiEvent e;
         e.sampleOffset = meta.samplePosition;
+        e.channel = m.getChannel() > 0 ? m.getChannel() : 1;
         if (m.isNoteOn())
         {
             e.type = MidiEvent::Type::noteOn;
             e.note = m.getNoteNumber();
+            e.velocity = m.getFloatVelocity();
         }
         else if (m.isNoteOff())
         {
@@ -102,6 +125,12 @@ void Jane60Processor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
             e.type = MidiEvent::Type::holdPedal;
             e.value = m.getControllerValue() >= 64 ? 1.0 : 0.0;
         }
+        else if (m.isChannelPressure())
+        {
+            // MPE per-note pressure (member channels); ignored by the synth unless MPE is on.
+            e.type = MidiEvent::Type::channelPressure;
+            e.value = m.getChannelPressureValue() / 127.0;
+        }
         else
             continue;
         if (events_.size() < events_.capacity())
@@ -116,6 +145,7 @@ void Jane60Processor::processBlock (juce::AudioBuffer<float>& buffer, juce::Midi
 
     synth_.setPanel (params::readPanel (apvts_));
     applyCondition (false);
+    applyExtras (false);
 
     const int n = buffer.getNumSamples();
     float* left = buffer.getWritePointer (0);
@@ -152,6 +182,11 @@ void Jane60Processor::getStateInformation (juce::MemoryBlock& destData)
     state.setProperty ("voiceSpread", voiceSpread_.load(), nullptr);
     state.setProperty ("vcfDriveDb", vcfDriveDb_.load(), nullptr);
     state.setProperty ("chorusNoiseDb", chorusNoiseDb_.load(), nullptr);
+    state.setProperty ("velocityTo", velocityTo_.load(), nullptr);
+    state.setProperty ("velocityAmount", velocityAmount_.load(), nullptr);
+    state.setProperty ("velocitySoft", velocitySoft_.load(), nullptr);
+    state.setProperty ("mpe", mpe_.load(), nullptr);
+    state.setProperty ("pressureTo", pressureTo_.load(), nullptr);
     presets_.writeTo (state);
     if (auto xml = state.createXml())
         copyXmlToBinary (*xml, destData);
@@ -169,6 +204,11 @@ void Jane60Processor::setStateInformation (const void* data, int sizeInBytes)
             voiceSpread_.store (static_cast<double> (tree.getProperty ("voiceSpread", 1.0)));
             vcfDriveDb_.store (static_cast<double> (tree.getProperty ("vcfDriveDb", 0.0)));
             chorusNoiseDb_.store (static_cast<double> (tree.getProperty ("chorusNoiseDb", 0.0)));
+            velocityTo_.store (static_cast<int> (tree.getProperty ("velocityTo", 0)));
+            velocityAmount_.store (static_cast<double> (tree.getProperty ("velocityAmount", 1.0)));
+            velocitySoft_.store (static_cast<bool> (tree.getProperty ("velocitySoft", false)));
+            mpe_.store (static_cast<bool> (tree.getProperty ("mpe", false)));
+            pressureTo_.store (static_cast<int> (tree.getProperty ("pressureTo", 1)));
             apvts_.replaceState (tree);
             presets_.readFrom (tree);
         }

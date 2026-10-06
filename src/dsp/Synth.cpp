@@ -83,11 +83,13 @@ int Synth::transposeSemis() const noexcept
 // ---------------------------------------------------------------------------
 // Voice level: rotary assignment, the 7th key steals the first (Service Notes p.14).
 // ---------------------------------------------------------------------------
-void Synth::voiceOn (int note) noexcept
+void Synth::voiceOn (int note, double velocity, int channel) noexcept
 {
     Voice& v = voices_[static_cast<std::size_t> (nextVoice_)];
     nextVoice_ = (nextVoice_ + 1) % kVoices;
-    v.noteOn (note);
+    v.noteOn (note, channel,
+              Extras::toVca (extras_.velocityTo) ? extras_.velocityScale (velocity) : 1.0,
+              Extras::toVcf (extras_.velocityTo) ? extras_.velocityScale (velocity) : 1.0);
 }
 
 void Synth::voiceOff (int note) noexcept
@@ -100,7 +102,7 @@ void Synth::voiceOff (int note) noexcept
 // ---------------------------------------------------------------------------
 // Keyboard level: physical keys, HOLD latching, arpeggio pattern.
 // ---------------------------------------------------------------------------
-void Synth::keyDown (int note) noexcept
+void Synth::keyDown (int note, double velocity, int channel) noexcept
 {
     const bool phraseStart = latched_.empty();
     if (std::find (physical_.begin(), physical_.end(), note) == physical_.end())
@@ -117,7 +119,7 @@ void Synth::keyDown (int note) noexcept
             if (! panel_.arpOn) voiceOff (dropped);
         }
         if (! panel_.arpOn)
-            voiceOn (note);
+            voiceOn (note, velocity, channel);
     }
     if (phraseStart)
         lfo_.phraseStart();
@@ -200,9 +202,29 @@ void Synth::handle (const MidiEvent& e) noexcept
 {
     switch (e.type)
     {
-        case MidiEvent::Type::noteOn: keyDown (e.note); break;
+        case MidiEvent::Type::noteOn: keyDown (e.note, e.velocity, e.channel); break;
         case MidiEvent::Type::noteOff: keyUp (e.note); break;
-        case MidiEvent::Type::pitchBend: bender_ = e.value; break;
+        case MidiEvent::Type::pitchBend:
+            // MPE: a member channel's bend belongs to the notes on that channel; the master
+            // channel (1) and plain MIDI drive the bender as on the hardware.
+            if (extras_.mpeOn && e.channel != 1)
+            {
+                for (auto& v : voices_)
+                    if (v.isActive() && v.channel() == e.channel)
+                        v.setNoteBendSemis (e.value * extras_.mpeBendRangeSemis);
+            }
+            else
+                bender_ = e.value;
+            break;
+        case MidiEvent::Type::channelPressure:
+            if (extras_.mpeOn && e.channel != 1)
+            {
+                const double s = extras_.pressureScale (e.value);
+                for (auto& v : voices_)
+                    if (v.isActive() && v.channel() == e.channel)
+                        v.setPressure (Extras::toVca (extras_.pressureTo) ? s : 1.0, Extras::toVcf (extras_.pressureTo) ? s : 1.0);
+            }
+            break;
         case MidiEvent::Type::allNotesOff:
             for (auto& v : voices_) v.noteOff();
             physical_.clear();

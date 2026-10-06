@@ -85,13 +85,24 @@ public:
         envFullDepthOct_ = std::log2 (v.envFullPeakHz / f0);
     }
 
-    void noteOn (int note) noexcept
+    void noteOn (int note, int channel = 1, double vcaScale = 1.0, double vcfEnvScale = 1.0) noexcept
     {
         note_ = note;
+        channel_ = channel;
+        velVca_ = vcaScale;
+        velVcf_ = vcfEnvScale;
+        pressVca_ = 1.0;
+        pressVcf_ = 1.0;
+        bendRatio_ = 1.0;
         gate_ = true;
         env_.gate (true);
         active_ = true;
     }
+
+    // Extras (velocity, MPE): all exactly 1.0 when off, so the off path is bit-identical.
+    [[nodiscard]] int channel() const noexcept { return channel_; }
+    void setNoteBendSemis (double semis) noexcept { bendRatio_ = std::exp2 (semis / 12.0); }
+    void setPressure (double vcaScale, double vcfEnvScale) noexcept { pressVca_ = vcaScale; pressVcf_ = vcfEnvScale; }
 
     void noteOff() noexcept
     {
@@ -116,7 +127,7 @@ public:
     /// Pitch for this block from the allocator (divisor at the transposed note) and the clock.
     void setPitch (long divisor, double clockHz, double ampVpp) noexcept
     {
-        dco_.setPitch (divisor, clockHz);
+        dco_.setPitch (divisor, clockHz * bendRatio_);
         dco_.setAmplitudeVpp (ampVpp * dev_.sawScale);
     }
 
@@ -152,7 +163,7 @@ public:
         // Cutoff CV: FREQ + ENV*depth*polarity + LFO*depth + KYBD + pedal + bender
         const Calibration::Vcf& v = cal_->vcf;
         double oct = (p.vcfFreq - v.anchorSliderPos) * map_.octavesPerSliderUnit + trimOffsetOct_ + dev_.cutoffOct;
-        const double envDepth = VcfMapping::cvDepth (p.vcfEnv) * envFullDepthOct_;
+        const double envDepth = VcfMapping::cvDepth (p.vcfEnv) * envFullDepthOct_ * velVcf_ * pressVcf_;
         oct += (p.vcfPolarity == VcfPolarity::normal ? 1.0 : -1.0) * envDepth * env;
         oct += VcfMapping::cvDepth (p.vcfLfo) * v.lfoFullDepthOct * lfo;
         oct += (p.vcfKybd / 10.0) * v.keyFollowOctPerOct * (note_ + octaveOffset_ - v.keyFollowPivotNote) / 12.0;
@@ -181,7 +192,7 @@ public:
             active_ = false;
 
         // Scale: 12 Vp-p saw through the filter gives 4 Vp-p at the VCA output (Service Notes adj. 5-1)
-        return filtered * gain * dev_.vcaScale * (cal_->vca.voiceOutVpp / cal_->dco.sawVpp);
+        return filtered * gain * dev_.vcaScale * velVca_ * pressVca_ * (cal_->vca.voiceOutVpp / cal_->dco.sawVpp);
     }
 
     void setOctaveOffset (int semis) noexcept { octaveOffset_ = semis; }
@@ -207,6 +218,8 @@ private:
     VoiceDeviation dev_;
     double manualDuty_ = 0.5;
     int note_ = 60;
+    int channel_ = 1;
+    double velVca_ = 1.0, velVcf_ = 1.0, pressVca_ = 1.0, pressVcf_ = 1.0, bendRatio_ = 1.0;
     int octaveOffset_ = 0;
     bool gate_ = false;
     bool active_ = false;

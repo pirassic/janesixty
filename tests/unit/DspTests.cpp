@@ -634,3 +634,57 @@ TEST_CASE ("chorus: the BBD's clock-dependent bandwidth darkens the wet path mor
     CHECK (ratioDb < -0.8);
     CHECK (ratioDb > -4.0);
 }
+
+TEST_CASE ("extras: the off path is bit-identical; velocity, per-note bend and pressure act only when on")
+{
+    PanelState p;
+    p.sawOn = true; p.vcfFreq = 6.0; p.vcfEnv = 3.0;
+    p.attack = 0.0; p.decay = 2.0; p.sustain = 8.0; p.release = 2.0;
+    auto render = [&] (const Extras& e, const std::vector<MidiEvent>& evs)
+    {
+        Synth s;
+        s.setPanel (p);
+        s.prepare (cal(), 48000.0, 440.0);
+        s.setExtras (e);
+        std::vector<float> l (9600), r (9600), out;
+        s.render (l.data(), r.data(), 9600, evs);
+        out.insert (out.end(), l.begin(), l.end());
+        std::vector<MidiEvent> none;
+        s.render (l.data(), r.data(), 9600, none);
+        out.insert (out.end(), l.begin(), l.end());
+        return out;
+    };
+    auto peak = [] (const std::vector<float>& x) { double m = 0.0; for (float v : x) m = std::max (m, std::abs (static_cast<double> (v))); return m; };
+
+    // A soft note on a member channel with a bend and pressure on that channel.
+    MidiEvent on; on.type = MidiEvent::Type::noteOn; on.note = 60; on.velocity = 0.3; on.channel = 2;
+    MidiEvent bend; bend.type = MidiEvent::Type::pitchBend; bend.value = 0.25; bend.channel = 2; bend.sampleOffset = 100;
+    MidiEvent press; press.type = MidiEvent::Type::channelPressure; press.value = 0.2; press.channel = 2; press.sampleOffset = 100;
+    const std::vector<MidiEvent> evs { on, bend, press };
+
+    // Off: bit-identical to the plain instrument whatever the velocity, channel, bend or pressure.
+    const auto plain = render (Extras {}, { MidiEvent { 0, MidiEvent::Type::noteOn, 60, 0.0, 1.0, 1 } });
+    const auto off = render (Extras {}, evs);
+    REQUIRE (plain.size() == off.size());
+    bool identical = true;
+    for (std::size_t i = 0; i < plain.size(); ++i) if (plain[i] != off[i]) { identical = false; break; }
+    CHECK (identical);
+
+    // Velocity to VCA at 100 %: a velocity of 0.3 is 0.3 of the level.
+    Extras vel; vel.velocityOn = true; vel.velocityTo = Extras::Destination::vca; vel.velocityAmount = 1.0;
+    CHECK_THAT (peak (render (vel, evs)) / peak (plain), WithinRel (0.3, 0.05));
+
+    // MPE: the member-channel bend of +12 semitones (0.25 of 48) doubles the pitch.
+    Extras mpe; mpe.mpeOn = true; mpe.pressureTo = Extras::Destination::none;
+    const auto bent = render (mpe, evs);
+    std::vector<double> a (plain.begin() + 4800, plain.begin() + 19200), b (bent.begin() + 4800, bent.begin() + 19200);
+    const double f0 = zeroCrossingFrequency (a, 48000.0, 0), f1 = zeroCrossingFrequency (b, 48000.0, 0);
+    CHECK_THAT (f1 / f0, WithinRel (2.0, 0.03));
+
+    // Pressure to VCA at 0.5 amount: pressure 0.2 scales the level by 1 - 0.5 (1 - 0.2) = 0.6,
+    // from the moment the pressure message arrives (compare the sustained part).
+    Extras pr; pr.mpeOn = true; pr.pressureTo = Extras::Destination::vca; pr.pressureAmount = 0.5; pr.mpeBendRangeSemis = 0.0;
+    const auto pressed = render (pr, evs);
+    const std::vector<float> plainTail (plain.begin() + 4800, plain.end()), pressedTail (pressed.begin() + 4800, pressed.end());
+    CHECK_THAT (peak (pressedTail) / peak (plainTail), WithinRel (0.6, 0.05));
+}

@@ -63,6 +63,18 @@ public:
     [[nodiscard]] double chorusNoiseDb() const noexcept { return chorusNoiseDb_.load(); }
     static constexpr double kChorusNoiseOff = -100.0;
 
+    // Extras (velocity, MPE): opt-in, stored in the plugin state, never in presets; off is bit-identical.
+    void setVelocity (int destination) noexcept { velocityTo_.store (destination); } // 0 off, 1 VCA, 2 VCF ENV, 3 both
+    [[nodiscard]] int velocity() const noexcept { return velocityTo_.load(); }
+    void setVelocityAmount (double a) noexcept { velocityAmount_.store (a); }
+    [[nodiscard]] double velocityAmount() const noexcept { return velocityAmount_.load(); }
+    void setVelocitySoft (bool s) noexcept { velocitySoft_.store (s); }
+    [[nodiscard]] bool velocitySoft() const noexcept { return velocitySoft_.load(); }
+    void setMpe (bool on) noexcept { mpe_.store (on); }
+    [[nodiscard]] bool mpe() const noexcept { return mpe_.load(); }
+    void setPressure (int destination) noexcept { pressureTo_.store (destination); } // 0 off, 1 VCA, 2 VCF ENV, 3 both
+    [[nodiscard]] int pressure() const noexcept { return pressureTo_.load(); }
+
     // Panel controls that are MIDI-like events rather than parameters.
     void setUiBender (double minusOneToOne) noexcept { uiBender_.store (minusOneToOne); uiBenderDirty_.store (true); }
     void setUiLfoTrig (bool down) noexcept { uiLfoTrig_.store (down); uiLfoTrigDirty_.store (true); }
@@ -90,6 +102,15 @@ private:
     std::atomic<double> chorusNoiseDb_ { 0.0 };
     Condition applied_;
     bool conditionApplied_ = false;
+    std::atomic<int> velocityTo_ { 0 };
+    std::atomic<double> velocityAmount_ { 1.0 };
+    std::atomic<bool> velocitySoft_ { false };
+    std::atomic<bool> mpe_ { false };
+    std::atomic<int> pressureTo_ { 1 };
+    Extras appliedExtras_;
+    bool extrasApplied_ = false;
+
+    void applyExtras (bool force) noexcept;
 
     void applyCondition (bool force) noexcept;
 

@@ -44,6 +44,10 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
     content_.addAndMakeVisible (presetBox_);
     content_.addAndMakeVisible (edited_);
     content_.addAndMakeVisible (hint_);
+    content_.addAndMakeVisible (extras_);
+    extras_.setJustificationType (juce::Justification::centred);
+    extras_.setFont (juce::FontOptions (13.0f, juce::Font::bold));
+    extras_.setColour (juce::Label::textColourId, juce::Colour (0xff7fc8ff));
     edited_.setJustificationType (juce::Justification::centredLeft);
     edited_.setFont (juce::FontOptions (16.0f, juce::Font::bold));
     edited_.setColour (juce::Label::textColourId, juce::Colour (0xffff9f40));
@@ -89,7 +93,8 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
         strip.removeFromRight (4);
         ab_.setBounds (strip.removeFromRight (52));
         strip.removeFromRight (8);
-        hint_.setBounds (strip.removeFromRight (810));
+        hint_.setBounds (strip.removeFromRight (740));
+        extras_.setBounds (strip.removeFromRight (70));
         edited_.setBounds (strip.removeFromRight (80));
         presetBox_.setBounds (strip);
     }
@@ -135,6 +140,11 @@ void Jane60Editor::timerCallback()
     if (pm.currentIndex() != lastShownIndex_)
         refreshPresetList();
     edited_.setText (pm.isEdited() ? "edited" : "", juce::dontSendNotification);
+    // Badge: the extras are not part of the patch, so say when they are on.
+    juce::String badge;
+    if (processor_.velocity() != 0) badge << "VEL";
+    if (processor_.mpe()) badge << (badge.isEmpty() ? "" : " ") << "MPE";
+    extras_.setText (badge, juce::dontSendNotification);
 }
 
 void Jane60Editor::savePreset()
@@ -187,6 +197,32 @@ void Jane60Editor::showSettingsMenu (juce::Component* target, juce::StandaloneFi
         sub.addItem (132, "Aged BBDs (+10 dB)", true, is (n, 10.0));
         m.addSubMenu ("Chorus noise", sub);
     }
+    m.addSeparator();
+    m.addSectionHeader ("Extras (the hardware has none; off is bit-identical)");
+    {
+        const int v = processor_.velocity();
+        juce::PopupMenu sub;
+        sub.addItem (140, "Off (every note at full level, as the hardware)", true, v == 0);
+        sub.addItem (141, "To VCA level", true, v == 1);
+        sub.addItem (142, "To VCF ENV depth", true, v == 2);
+        sub.addItem (143, "To both", true, v == 3);
+        sub.addSeparator();
+        sub.addItem (144, "Amount 50 %", true, is (processor_.velocityAmount(), 0.5));
+        sub.addItem (145, "Amount 100 %", true, is (processor_.velocityAmount(), 1.0));
+        sub.addItem (146, "Soft curve", true, processor_.velocitySoft());
+        m.addSubMenu ("Velocity", sub);
+    }
+    {
+        const int pr = processor_.pressure();
+        juce::PopupMenu sub;
+        sub.addItem (150, "MPE on (lower zone: per-note bend 48 semitones, pressure)", true, processor_.mpe());
+        sub.addSeparator();
+        sub.addItem (151, "Pressure off", true, pr == 0);
+        sub.addItem (152, "Pressure to VCA level", true, pr == 1);
+        sub.addItem (153, "Pressure to VCF ENV depth", true, pr == 2);
+        sub.addItem (154, "Pressure to both", true, pr == 3);
+        m.addSubMenu ("MPE", sub);
+    }
     if (window != nullptr)
     {
         m.addSeparator();
@@ -215,6 +251,12 @@ void Jane60Editor::showSettingsMenu (juce::Component* target, juce::StandaloneFi
             case 130: p.setChorusNoiseDb (Jane60Processor::kChorusNoiseOff); return;
             case 131: p.setChorusNoiseDb (0.0); return;
             case 132: p.setChorusNoiseDb (10.0); return;
+            case 140: case 141: case 142: case 143: p.setVelocity (result - 140); return;
+            case 144: p.setVelocityAmount (0.5); return;
+            case 145: p.setVelocityAmount (1.0); return;
+            case 146: p.setVelocitySoft (! p.velocitySoft()); return;
+            case 150: p.setMpe (! p.mpe()); return;
+            case 151: case 152: case 153: case 154: p.setPressure (result - 151); return;
             default: break;
         }
         if (window != nullptr)

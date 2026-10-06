@@ -4,6 +4,7 @@
 
 #include "dsp/Calibration.h"
 #include "dsp/Condition.h"
+#include "dsp/Extras.h"
 #include "dsp/PanelState.h"
 #include "dsp/chorus/ChorusBoard.h"
 #include "dsp/core/MasterClock.h"
@@ -22,11 +23,13 @@ namespace jane60
 
 struct MidiEvent
 {
-    enum class Type : std::uint8_t { noteOn, noteOff, pitchBend, allNotesOff, lfoTrig, holdPedal };
+    enum class Type : std::uint8_t { noteOn, noteOff, pitchBend, allNotesOff, lfoTrig, holdPedal, channelPressure };
     int sampleOffset = 0;
     Type type = Type::noteOn;
     int note = 0;
-    double value = 0.0; // bend -1..1, or trig button 1/0
+    double value = 0.0;   // bend -1..1, trig button 1/0, pressure 0..1
+    double velocity = 1.0; // note on, 0..1 (the hardware has none: 1.0 unless velocity is on)
+    int channel = 1;      // MIDI channel 1..16 (MPE member channels route per note)
 };
 
 class Synth
@@ -44,15 +47,19 @@ public:
     void setCondition (const Condition& c) noexcept;
     [[nodiscard]] const Condition& condition() const noexcept { return condition_; }
 
+    /// Opt-in extras (velocity, MPE); off by default and bit-identical when off.
+    void setExtras (const Extras& e) noexcept { extras_ = e; }
+    [[nodiscard]] const Extras& extras() const noexcept { return extras_; }
+
     void render (float* left, float* right, int numSamples, const std::vector<MidiEvent>& events);
 
     [[nodiscard]] int activeVoices() const noexcept;
 
 private:
     void handle (const MidiEvent& e) noexcept;
-    void keyDown (int note) noexcept;
+    void keyDown (int note, double velocity, int channel) noexcept;
     void keyUp (int note) noexcept;
-    void voiceOn (int note) noexcept;
+    void voiceOn (int note, double velocity = 1.0, int channel = 1) noexcept;
     void voiceOff (int note) noexcept;
     void releaseUnheld() noexcept;
     void rebuildArpPattern() noexcept;
@@ -66,6 +73,7 @@ private:
     double sr_ = 48000.0;
     PanelState panel_;
     Condition condition_;
+    Extras extras_;
 
     MasterClock clock_;
     PitchTable pitch_;

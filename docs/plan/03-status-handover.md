@@ -11,7 +11,7 @@ Read this first in a new session. It states where the project is, what is settle
 ## Where the build stands
 - Formats: AU, VST3, Standalone, macOS universal (arm64 + x86_64, 11.0+), ad-hoc signed in CI; VST3 and Standalone on Windows x64 (MSVC, `plugin-windows` job, pluginval, artifact `jane60-windows-unsigned`), added 2026-10-06. Artifact `jane60-macos-unsigned` on every green run; install with `xattr -dr com.apple.quarantine`. User presets: `~/Library/Audio/Presets/clevergear/Jane-Sixty` on macOS, `%APPDATA%\clevergear\Jane-Sixty` on Windows.
 - CI jobs: `dsp-tests-linux` (26 Catch2 tests, DSP library only), `plugin-macos` (build, tests, auval, pluginval level 5, artifact), `sim-reference` (ngspice IR3109 reference vs the plugin block, report artifact `sim-reference-report`).
-- Phases 0 to 4 done (research, DSP, presets, panel UI, calibration). Phase 5 in progress (Windows job added; velocity and MPE next). Phases 6 and 7 not started.
+- Phases 0 to 4 done (research, DSP, presets, panel UI, calibration). Phase 5 in progress: Windows job added, velocity and MPE extras implemented (`src/dsp/Extras.h`, `Synth::setExtras`, plugin state keys velocityTo / velocityAmount / velocitySoft / mpe / pressureTo, Settings menu, strip badge; test proves the off path bit-identical). Remaining phase 5 exit: the extras heard in Logic and Cubase with an MPE controller, the Windows VST3 in Cubase on Windows. Phases 6 and 7 not started.
 
 ## Sound model, current state and provenance
 All constants are in `calibration/juno60.json` with a source tag each. Settled this session, in audible order:
