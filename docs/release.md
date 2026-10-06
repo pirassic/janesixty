@@ -19,6 +19,7 @@ Status 2026-10-06: all six secrets are set and the signed path is verified (Rele
 
 1. Bump `project(Jane60 VERSION x.y.z)` in `CMakeLists.txt` (the plugin reports this version to hosts) and merge to the branch being released.
 2. Tag and push: `git tag v0.9.0 && git push origin v0.9.0`. The first public release is 0.9; 1.0 follows the owner's listening pass and host checks.
+   If the draft turns out wrong before it is published, delete the draft release on GitHub, delete the tag (`git push origin :refs/tags/v0.9.0`), fix, and tag the new commit with the same name. A tag only moves while its release is still a draft.
 3. The **Release** workflow builds macOS (universal, signed, notarised, stapled `.pkg` plus bare-bundle zips) and Windows (Inno Setup installer plus zips), then opens a **draft** GitHub release with the assets and generated notes. About 25 minutes.
 4. Check the draft: install the `.pkg` on a clean Mac (no quarantine prompt means notarisation worked), run the Windows installer in a VM, then publish.
 

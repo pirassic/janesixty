@@ -150,12 +150,17 @@ jobs:
       - name: Collect artefacts
         shell: pwsh
         run: |
-          $vst3 = (Get-ChildItem -Path build -Recurse -Directory -Filter 'Jane-Sixty.vst3' | Select-Object -First 1).FullName
-          $exe  = (Get-ChildItem -Path build -Recurse -File -Filter 'Jane-Sixty.exe' | Select-Object -First 1).FullName
+          $dll  = Get-ChildItem -Path build -Recurse -File -Filter 'Jane-Sixty.vst3' | Where-Object { $_.FullName -like '*\Contents\x86_64-win\*' } | Select-Object -First 1
+          if ($null -eq $dll) { throw "VST3 dll not found under build (JUCE writes an empty bundle folder per configuration, so a folder match is not enough)" }
+          $vst3 = $dll.Directory.Parent.Parent.FullName
+          $exe  = (Get-ChildItem -Path build -Recurse -File -Filter 'Jane-Sixty.exe' | Where-Object { $_.FullName -like '*\Standalone\*' } | Select-Object -First 1).FullName
+          if (-not $exe) { throw "Standalone exe not found under build" }
           New-Item -ItemType Directory -Force -Path dist-src, dist | Out-Null
-          Copy-Item -Recurse $vst3 dist-src/
+          robocopy "$vst3" "dist-src\Jane-Sixty.vst3" /E /NFL /NDL /NJH /NJS
+          if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
           Copy-Item $exe dist-src/
-          Get-ChildItem -Recurse dist-src | Select-Object FullName
+          if (-not (Test-Path "dist-src\Jane-Sixty.vst3\Contents\x86_64-win\Jane-Sixty.vst3")) { throw "the VST3 bundle copy lost its dll" }
+          Get-ChildItem -Recurse -Force dist-src | Select-Object FullName, Length
       - name: Inno Setup installer
         shell: pwsh
         run: |
@@ -165,6 +170,7 @@ jobs:
           Compress-Archive -Path dist-src/Jane-Sixty.vst3 -DestinationPath "dist/Jane-Sixty-$v-win64-VST3.zip"
           Compress-Archive -Path dist-src/Jane-Sixty.exe -DestinationPath "dist/Jane-Sixty-$v-win64-Standalone.zip"
           Get-ChildItem dist
+          foreach ($f in Get-ChildItem dist) { if ($f.Length -lt 1MB) { throw "$($f.Name) is only $($f.Length) bytes" } }
       - uses: actions/upload-artifact@v4
         with:
           name: release-windows
