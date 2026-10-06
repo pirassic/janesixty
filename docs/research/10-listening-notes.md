@@ -71,3 +71,7 @@ Width per band (side over mid energy within the band, 150-500 / 500-2k / 2-6k / 
 ## 2026-10-05, filter drive against the recording: not resolvable
 
 Ten saw-led patches (Strings 1 and 2, Brass, Trumpet, Horn, Tuba, Violine, Flute, Synthesizer Harp, Space Harp) rendered at the schematic drive and at -8 dB (the level the p.9 mixer divider would give if R37 15 k is the series leg). Band balance against the recording moves by at most 1 dB in the high band (mean -1.5 to -0.5) and 0.3 dB/oct in tilt (+1.4 to +1.7), one toward the recording and one away, both inside the method's noise. The IR3109's tanh at +-0.94 of 2 Vt on saw peaks is a mild effect that a 128 kbps MP3 of a performance cannot separate from the per-patch cutoff balance. Default kept; offered as a setting.
+
+## 2026-10-06, chorus from the datasheet and the paper: width unchanged within 0.3 dB
+
+The MN3009 knee shape, the datasheet hiss level and the clock-tracking sinc bandwidth (replacing the 8 % loss term) rendered against the recording: per-band width mode I -1.1 / -1.0 / -1.0 / -0.2 dB (was -1.4 / -1.3 / -1.1 / -0.1), mode II -0.7 / -1.2 / -1.0 / -0.5 (was -0.9 / -1.4 / -1.2 / -0.6); band balance and tilt within 0.1 dB of before. The sinc term's effect is where expected, the top of the wet path at the long end of the sweep, and the demo cannot hear more than that from it. The residual 1 dB of width stays as it was.
