@@ -15,6 +15,7 @@ name: Release
 on:
   push:
     tags: ["v*"]
+    branches: ["release-test/**"]   # a throwaway branch runs the build and installer jobs without publishing
   workflow_dispatch:
 
 env:
