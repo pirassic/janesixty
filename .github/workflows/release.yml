@@ -93,11 +93,17 @@ jobs:
           # Component plists with BundleIsRelocatable off: otherwise Installer "relocates" each bundle to
           # wherever Spotlight already finds a copy with the same bundle id (a zip unpacked in Documents,
           # say) instead of the install location.
+          PB=/usr/libexec/PlistBuddy
           for c in au vst3 app; do
             pkgbuild --analyze --root "pkgroot/$c" "pkg/$c.plist"
-            n=$(/usr/libexec/PlistBuddy -c "Print" "pkg/$c.plist" | grep -c BundleIsRelocatable)
-            for ((i=0; i<n; i++)); do /usr/libexec/PlistBuddy -c "Set :$i:BundleIsRelocatable false" "pkg/$c.plist"; done
-            grep -A1 BundleIsRelocatable "pkg/$c.plist" | grep -q '<false/>' || { echo "relocation not disabled in $c.plist"; exit 1; }
+            i=0
+            while "$PB" -c "Print :$i" "pkg/$c.plist" >/dev/null 2>&1; do
+              "$PB" -c "Set :$i:BundleIsRelocatable false" "pkg/$c.plist" 2>/dev/null || "$PB" -c "Add :$i:BundleIsRelocatable bool false" "pkg/$c.plist"
+              [ "$("$PB" -c "Print :$i:BundleIsRelocatable" "pkg/$c.plist")" = "false" ] || { echo "relocation still on for entry $i of $c"; exit 1; }
+              i=$((i+1))
+            done
+            [ "$i" -gt 0 ] || { echo "no bundle entries in $c.plist"; exit 1; }
+            plutil -convert xml1 -o - "pkg/$c.plist"
           done
           pkgbuild --root pkgroot/au   --component-plist pkg/au.plist   --identifier com.clevergear.jane60.au   --version "$V" --install-location /Library/Audio/Plug-Ins/Components pkg/au.pkg
           pkgbuild --root pkgroot/vst3 --component-plist pkg/vst3.plist --identifier com.clevergear.jane60.vst3 --version "$V" --install-location /Library/Audio/Plug-Ins/VST3 pkg/vst3.pkg
