@@ -75,3 +75,7 @@ Ten saw-led patches (Strings 1 and 2, Brass, Trumpet, Horn, Tuba, Violine, Flute
 ## 2026-10-06, chorus from the datasheet and the paper: width unchanged within 0.3 dB
 
 The MN3009 knee shape, the datasheet hiss level and the clock-tracking sinc bandwidth (replacing the 8 % loss term) rendered against the recording: per-band width mode I -1.1 / -1.0 / -1.0 / -0.2 dB (was -1.4 / -1.3 / -1.1 / -0.1), mode II -0.7 / -1.2 / -1.0 / -0.5 (was -0.9 / -1.4 / -1.2 / -0.6); band balance and tilt within 0.1 dB of before. The sinc term's effect is where expected, the top of the wet path at the long end of the sweep, and the demo cannot hear more than that from it. The residual 1 dB of width stays as it was.
+
+## 2026-10-06, schematic drive (-8.8 dB into the OTA pairs): the bank moves toward the recording
+
+Mean over the 56 patches, plugin minus recording, before and after: hi-mid -2.06 to -1.21 dB, high -2.15 to -1.07, sub +2.09 to +0.93, mid -2.80 to -2.59, low -1.18 to -1.52, tilt +0.44 to +0.67 dB/oct, width unchanged. Less saturation in the filter leaves more of the top end, which is the direction the recording wanted; every band is now within 2.6 dB of it. The self-oscillating bank 7 patches are 8.8 dB louder than before, at the level of a saw, as the Service Notes' equal TP4 trims say.
