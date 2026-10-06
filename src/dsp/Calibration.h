@@ -72,6 +72,7 @@ struct Calibration
         double shuntResistorOhm = 560.0;   ///< per stage, to ground
         double stageCapPf = 240.0;         ///< per stage
         double qCompensation = 0.308;      ///< input-side Q compensation (Juno-6 reading)
+        double stage1DriveDb = 0.0;        ///< level into the OTA pairs relative to a 12 Vp-p input through 68 k / 560 (schematic mixer reading)
         double anchorSliderPos = 3.0;      ///< FREQ slider position for the 248 Hz anchor
         double anchorHz = 248.0;           ///< self-oscillation at the anchor
         double trimOffsetOct = 0.0;        ///< unit trim relative to the Service Notes 248 Hz point (condition layer)

@@ -138,6 +138,7 @@ Calibration Calibration::fromJson (std::string_view jsonText)
     c.vcf.shuntResistorOhm        = r.number ("vcf.shuntResistorOhm");
     c.vcf.stageCapPf              = r.number ("vcf.stageCapPf");
     c.vcf.qCompensation           = r.number ("vcf.qCompensation");
+    c.vcf.stage1DriveDb           = r.number ("vcf.stage1DriveDb");
     c.vcf.anchorSliderPos         = r.number ("vcf.anchorSliderPos");
     c.vcf.anchorHz                = r.number ("vcf.anchorHz");
     c.vcf.trimOffsetOct           = r.number ("vcf.trimOffsetOct");

@@ -31,7 +31,8 @@ import argparse, csv, math, os, subprocess, sys, tempfile
 import numpy as np
 
 VT2 = 0.052
-A = 560.0 / 68560.0
+STAGE1_DRIVE_DB = -8.8   # calibration vcf.stage1DriveDb: mixer divider and summing-node gain, 2026-10-06
+A = 560.0 / 68560.0 * 10 ** (STAGE1_DRIVE_DB / 20.0)
 C = 240e-12
 
 def stages(src):

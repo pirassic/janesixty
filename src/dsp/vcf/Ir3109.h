@@ -28,7 +28,10 @@ public:
     {
         cal_ = c;
         sr_ = sampleRate * 2.0;
-        attenuation_ = c.shuntResistorOhm / (c.inputResistorOhm + c.shuntResistorOhm);
+        // The schematic's drive into the OTA pairs (stage1DriveDb, mixer divider and the summing
+        // node's 68 k / 10 k gain) folds into the attenuation; the output is referred back so the
+        // passband gain stays unity in the plugin's volts.
+        attenuation_ = c.shuntResistorOhm / (c.inputResistorOhm + c.shuntResistorOhm) * std::pow (10.0, c.stage1DriveDb / 20.0);
         reset();
     }
 

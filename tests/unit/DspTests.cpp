@@ -143,10 +143,12 @@ TEST_CASE ("IR3109: self-oscillates at the set cutoff with k = 4")
     std::vector<double> tail (y.begin() + 2 * 48000, y.end());
     const double fosc = dominantFrequency (tail, sr, 200.0, 300.0, 0.5);
     CHECK_THAT (fosc, WithinRel (248.0, 0.03));
-    // Amplitude set by the OTA saturation at the resonance trim target (4 Vp-p, adj. 8-1).
+    // Amplitude set by the OTA saturation at the resonance trim target: 4 Vp-p at TP4 (adj. 8-1),
+    // the same as the saw's 4 Vp-p there (adj. 5-1), so in the filter's input-referred volts the
+    // oscillation sits at the saw's 12 Vp-p.
     double mx = 0.0;
     for (double v : tail) mx = std::max (mx, std::abs (v));
-    CHECK_THAT (2.0 * mx, WithinRel (cal().vcf.selfOscVpp, 0.1));
+    CHECK_THAT (2.0 * mx, WithinRel (cal().vcf.selfOscVpp * cal().dco.sawVpp / cal().vca.voiceOutVpp, 0.1));
 }
 
 TEST_CASE ("IR3109: low-pass response, -24 dB/oct slope well above cutoff")
