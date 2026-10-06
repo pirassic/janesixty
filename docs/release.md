@@ -13,6 +13,8 @@ Needs an active Apple Developer Program membership.
 
 Secrets go under the repository's Settings, Secrets and variables, Actions. The release workflow reads nothing else. Without the certificate secret it still builds and packages, unsigned, with a warning in the log; without the notary secrets it signs but does not notarise.
 
+Status 2026-10-06: all six secrets are set and the signed path is verified (Release run 2: signed, notarised, stapled, Gatekeeper "Notarized Developer ID").
+
 ## Each release
 
 1. Bump `project(Jane60 VERSION x.y.z)` in `CMakeLists.txt` (the plugin reports this version to hosts) and merge to the branch being released.

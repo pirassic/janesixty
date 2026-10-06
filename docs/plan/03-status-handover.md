@@ -5,7 +5,7 @@ Read this first in a new session. It states where the project is, what is settle
 ## Identity and ground rules
 - Product **Jane-Sixty**, vendor **clevergear**, bundle id `com.clevergear.jane60`, codes `Clvg` / `Jn60`. Identifiers freeze at v1.0; the display vendor can change.
 - GPLv3, JUCE 9.0.3 (AGPLv3) as a submodule in `libs/JUCE`, CMake 3.25+, C++20. No Roland or Juno trademark in product name or identifiers (NOTICE, README).
-- Branch `claude/nice-wozniak-1s5ih6` (continues `claude/admiring-tesla-vj12gr`); every push runs CI. Reference audio lives on branch `reference-audio` (never merged) and locally under the gitignored `reference/`.
+- Branch `claude/nice-wozniak-1s5ih6` (continues `claude/admiring-tesla-vj12gr`); every push runs CI. `main` holds the same history since 2026-10-06 (fast-forwarded on the owner's instruction); keep developing on the working branch and fast-forward main when the owner says. Reference audio lives on branch `reference-audio` (never merged) and locally under the gitignored `reference/`.
 - Owner preferences: ask when readings differ materially, challenge assumptions, no verbosity, never a double hyphen.
 
 ## Where the build stands
@@ -42,7 +42,7 @@ Measured against the demo recording (tools below), mean over 56 patches, plugin 
 
 ## Next phases (updated)
 - **Phase 5, extras and Windows**: velocity and MPE as opt-in settings (done); chorus BBD as Holters and Parker's variable-rate model (done); **Windows Standalone + VST3** (x64, MSVC on `windows-latest` in CI, pluginval, zip artifact; no AU, no AAX). CMake already lists formats per platform (`JANE60_FORMATS`), so the work is a CI job, MSVC warning cleanup (`/W4`, the DSP uses `-Wconversion`-clean code already), and a Windows preset folder (`%APPDATA%\clevergear\Jane-Sixty`, the `PresetManager::userFolder()` path is the one place to change). Expect first-run issues with `juce::FileChooser` and the window default size code using the primary display.
-- **Phase 6, release**: pipeline written 2026-10-06 (`.github/workflows/release.yml`, `installer/`, `docs/release.md`): tag-driven, Developer ID signing and notarisation when the secrets exist, `.pkg` with selectable AU / VST3 / app, Inno Setup on Windows, draft GitHub release. Owner's Apple Developer membership paid 2026-10-06, activation pending; then the four secrets per `docs/release.md`. Still to do: a dry run on a `release-test/` branch, the user manual, the version bump and the v1.0 tag.
+- **Phase 6, release**: pipeline written 2026-10-06 (`.github/workflows/release.yml`, `installer/`, `docs/release.md`): tag-driven, Developer ID signing and notarisation when the secrets exist, `.pkg` with selectable AU / VST3 / app, Inno Setup on Windows, draft GitHub release. Verified 2026-10-06: an unsigned dry run and then a signed run on main (run 2 of the Release workflow) produced a Developer ID signed, notarised (Apple status Accepted) and stapled `.pkg` that Gatekeeper assesses as "Notarized Developer ID", plus the Windows installer; the six repository secrets are in place (team 98J28BR3PF). Still to do for v1.0: the user manual, the version bump in CMakeLists.txt, and the tag. `main` was fast-forwarded to the working branch on 2026-10-06 and the Release workflow runs from there.
 - **Phase 7, performance layer**: scale and chord modes, Circuit Rhythm input, Launchpad LED feedback (research/06).
 
 ## How a session should start

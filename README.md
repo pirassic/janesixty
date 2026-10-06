@@ -17,6 +17,10 @@ Jane-Sixty is modelled from documents, not from a unit on the bench. What that m
 
 If you can put a Juno-60 on a bench, `docs/research/08-bench-protocol.md` says what to capture; the calibration file is designed to be replaced without touching the DSP.
 
+## Install
+
+Releases carry a notarised macOS installer (`Jane-Sixty-x.y.z-macOS.pkg`: AU, VST3 and the standalone app, each selectable) and a Windows installer (`Jane-Sixty-x.y.z-win64-setup.exe`: VST3 and the app). The bare bundles are also attached as zips; on macOS a zipped bundle downloaded by a browser is quarantined, so the installer is the easy path. CI artifacts from ordinary pushes are unsigned development builds: on macOS remove the quarantine with `xattr -dr com.apple.quarantine <bundle>` before use.
+
 ## Build
 
 ```
