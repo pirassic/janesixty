@@ -25,7 +25,7 @@ Owner: high VCA LEVEL soft-clips; is that consistent with the original? Answer: 
 
 ## 2026-10-05, measured comparison against the demo recording
 
-The owner supplied the demo's audio (128 kbps MP3) with chapter times. `tools/listen/pitches.py` estimates each segment's register, `RenderPatches` plays every factory patch in that register through the full DSP chain, and `compare_reference.py` compares band balance (sub, low, mid, hi-mid, high), spectral tilt, stereo width and attack time per patch.
+The owner supplied the demo's audio with chapter times. `tools/listen/pitches.py` estimates each segment's register, `RenderPatches` plays every factory patch in that register through the full DSP chain, and `compare_reference.py` compares band balance (sub, low, mid, hi-mid, high), spectral tilt, stereo width and attack time per patch.
 
 Finding: with the FREQ slider at 0.9 octaves per unit the plugin was dark on nearly every patch. Third-octave spectra of Strings 1 (FREQ 7, no ENV) show the recording as a plain 6 dB/octave sawtooth out to 14 kHz, i.e. the real filter is effectively open at FREQ 7, where the plugin rolled off at 24 dB/octave from about 2.5 kHz. Mean difference (plugin minus reference) over 56 patches:
 
