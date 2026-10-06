@@ -158,6 +158,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path dist-src, dist | Out-Null
           robocopy "$vst3" "dist-src\Jane-Sixty.vst3" /E /NFL /NDL /NJH /NJS
           if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
+          $global:LASTEXITCODE = 0   # robocopy's 1 means "files copied"; the runner would fail the step on it
           Copy-Item $exe dist-src/
           if (-not (Test-Path "dist-src\Jane-Sixty.vst3\Contents\x86_64-win\Jane-Sixty.vst3")) { throw "the VST3 bundle copy lost its dll" }
           Get-ChildItem -Recurse -Force dist-src | Select-Object FullName, Length

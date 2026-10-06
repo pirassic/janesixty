@@ -159,9 +159,16 @@ jobs:
       - name: Package artefacts
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Compress-Archive -Path "${{ steps.art.outputs.vst3 }}" -DestinationPath dist/Jane-Sixty-VST3-win64.zip
-          Compress-Archive -Path "${{ steps.art.outputs.exe }}" -DestinationPath dist/Jane-Sixty-Standalone-win64.zip
+          $vst3 = "${{ steps.art.outputs.vst3 }}"
+          $exe = "${{ steps.art.outputs.exe }}"
+          New-Item -ItemType Directory -Force -Path dist-src, dist | Out-Null
+          robocopy "$vst3" "dist-src\Jane-Sixty.vst3" /E /NFL /NDL /NJH /NJS
+          if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
+          $global:LASTEXITCODE = 0   # robocopy's 1 means "files copied"; the runner would fail the step on it
+          Copy-Item $exe dist-src/
+          if (-not (Test-Path "dist-src\Jane-Sixty.vst3\Contents\x86_64-win\Jane-Sixty.vst3")) { throw "the VST3 bundle copy lost its dll" }
+          Compress-Archive -Path dist-src/Jane-Sixty.vst3 -DestinationPath dist/Jane-Sixty-VST3-win64.zip
+          Compress-Archive -Path dist-src/Jane-Sixty.exe -DestinationPath dist/Jane-Sixty-Standalone-win64.zip
           foreach ($f in Get-ChildItem dist) { if ($f.Length -lt 1MB) { throw "$($f.Name) is only $($f.Length) bytes" } }
       - uses: actions/upload-artifact@v4
         with:
