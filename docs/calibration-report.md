@@ -66,8 +66,18 @@ The user-facing settings that the overview promised for the audible uncertaintie
 ### Self-oscillation start time
 On a silent patch the model's self-oscillation grows from the mixer's -100 dB noise bleed at about 33 dB/s and takes 3 s to reach 4 Vp-p. The ngspice `network` run (the drawn BA662 with its tanh limit and the 47 k / 100 k dividers) oscillates at 3.5 Vp-p when its small-signal gain is 1.25 % above threshold, the same margin as the model's kMax 4.05: both limiters are mild at 4 Vp-p, so a unit trimmed to the Service Notes' 4 Vp-p also sits just above threshold and also builds up slowly from its own noise. The real seed (OTA and mixer noise, saw switch leakage) is probably nearer -80 dB than -100, which would shorten the start to about 2 s. Left as is; a bench capture of patch 84's onset would settle it.
 
-### BA662 input weighting (open, research only)
-The drawn network with an ideal BA662 (divider 1.5 / 48.5 = 0.0309 into pin 3, 1.5 / 101.5 = 0.0148 into pin 2) makes the compensation 2.1 times the feedback and raises the passband by 5.4 dB at full resonance (sim `passband.csv`, network rows); the recording's loudness balance across the bank wants the model's 0.308, a 7 dB loss. The compensation leg therefore acts about seven times (17 dB) weaker than the ideal divider predicts. Candidates: the BA662's input stage has internal bias or degeneration resistance on the (+) input only (the part is an OTA plus buffer with Wilson mirrors per the reverse engineering at Open Music Labs; its input network is not in any document this session could reach), or the faint R5 trace terminates elsewhere than pin 3. A bench measurement of passband level vs RES on one unit, or the Open Music Labs internal diagram read for an input resistor, closes it. Until then 0.308 stays `plugin-derived`, confirmed by the recording within 2 dB.
+### BA662 input weighting, resolved to a resistor value (2026-10-06)
+The drawn network with an ideal BA662 (divider 1.5 / 48.5 = 0.0309 into pin 3, 1.5 / 101.5 = 0.0148 into pin 2) makes the compensation 2.1 times the feedback and raises the passband by 6.8 dB at full resonance (sim `passband.csv`, network rows); the recording's loudness balance across the bank wants the model's 0.308, a 7 dB loss. The owner's reverse-engineered BA662 internal schematic (research/01) shows pin 3 going straight into the base of Q2B and pin 2 into Q2A, a bare differential pair with no base resistors or degeneration, so the chip cannot weight its two inputs differently; the asymmetry is in the external network. Of the drawn parts, R5 47 k is confirmed on two scans and the 1.5 k on pin 2 (R1) sets the feedback with R3 100 k, which the self-oscillation threshold confirms, so the suspect is R2, the shunt on pin 3. `tools/sim/r2_sweep.py` runs the network with R2 swept, passband at 100 Hz relative to RES 0, at normalised k = 1 / 2 / 3 / 3.9:
+
+| | k 1 | k 2 | k 3 | k 3.9 |
+|---|---|---|---|---|
+| plugin model, 0.308 (recording) | -3.4 | -5.1 | -6.1 | -6.7 |
+| network, R2 1.5 k (as read) | +5.0 | +6.1 | +6.6 | +6.8 |
+| network, R2 330 | -2.1 | -3.0 | -3.5 | -3.8 |
+| network, R2 220 | -3.2 | -4.7 | -5.5 | -6.0 |
+| network, R2 150 | -4.0 | -5.9 | -7.1 | -7.8 |
+
+R2 = 220 Ohm reproduces the recording-confirmed curve within 0.7 dB over the whole range; 150 to 220 brackets it. Red-red-brown against brown-green-red is a plausible band misread on a 450 dpi scan. Conclusion: the plugin's 0.308 is consistent with the schematic once R2 is about 220 Ohm, and the coefficient keeps its `plugin-derived` tag until the owner reads R2 on the scan (or a unit), at which point it becomes schematic-derived with the formula (10/68)(R3+R1)/(R5+R2) x (R2/R1). The oscillation threshold is unchanged by R2 (32.6 mA/V, a 1.7 mA tail), which fits a bare BJT pair with gm = I / 2 Vt.
 
 ## Assumed values (phase 4 exit list, 2026-10-05)
 Every entry in `calibration/juno60.json` whose source starts with `assumed` (`Calibration::assumedKeys()`), with its uncertainty and what it touches. vcf.qCompensation, chorus.dryGain and chorus.wetGain were assumed earlier and now carry schematic sources.
