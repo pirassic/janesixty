@@ -38,4 +38,15 @@ Guidelines:
 
 ## Licensing
 
-Contributions are accepted under GPLv3, the project's licence. JUCE is used under its AGPLv3 option. Do not add code you cannot license this way, and do not add Roland or Juno trademarks to names or identifiers.
+Jane-Sixty is released under GPLv3, and JUCE is used under its AGPLv3 option for the desktop builds.
+
+**Inbound licence for contributions.** Some distribution channels, the Apple App Store for an iPad version in particular, have terms that are widely considered incompatible with the GPL. So that the project can ship there without asking every past contributor for permission, contributions are accepted under two licences at once:
+
+- the GNU General Public License version 3 or later, and
+- the MIT License,
+
+at the project's choice for any given distribution. You keep the copyright on what you wrote. Everything in the public repository stays GPLv3; the second licence only matters for store builds, which also use JUCE under its commercial licence rather than the AGPL.
+
+To record your agreement, add a `Signed-off-by: Your Name <email>` line to each commit (`git commit -s`). By signing off you confirm that you wrote the contribution, or have the right to submit it, and that you license it as above. Pull requests without the sign-off are asked for it before merging.
+
+Do not add code you cannot license this way, and do not add Roland or Juno trademarks to names, identifiers or artwork.
