@@ -2,6 +2,7 @@
 
 #include "PluginEditor.h"
 #include "ui/PanelLayout.h"
+#include "ui/ShortcutsDialog.h"
 
 #include <cmath>
 
@@ -43,7 +44,6 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
         content_.addAndMakeVisible (b);
     content_.addAndMakeVisible (presetBox_);
     content_.addAndMakeVisible (edited_);
-    content_.addAndMakeVisible (hint_);
     content_.addAndMakeVisible (extras_);
     extras_.setJustificationType (juce::Justification::centred);
     extras_.setFont (juce::FontOptions (13.0f, juce::Font::bold));
@@ -51,10 +51,6 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
     edited_.setJustificationType (juce::Justification::centredLeft);
     edited_.setFont (juce::FontOptions (16.0f, juce::Font::bold));
     edited_.setColour (juce::Label::textColourId, juce::Colour (0xffff9f40));
-    hint_.setText ("Keys: A S D F G H J K play, W E T Y U sharps, Z / X octave. 1 to 7 chords, Space loops a progression. Shift + bank 1 / 2 = bank 6 / 7. See docs/user/keyboard-shortcuts.md", juce::dontSendNotification);
-    hint_.setJustificationType (juce::Justification::centredRight);
-    hint_.setFont (juce::FontOptions (14.0f));
-    hint_.setColour (juce::Label::textColourId, juce::Colour (0xff9a9a9a));
 
     prev_.onClick = [this] { processor_.presets().loadPrevious(); refreshPresetList(); };
     next_.onClick = [this] { processor_.presets().loadNext(); refreshPresetList(); };
@@ -93,7 +89,6 @@ Jane60Editor::Jane60Editor (Jane60Processor& p)
         strip.removeFromRight (4);
         ab_.setBounds (strip.removeFromRight (52));
         strip.removeFromRight (8);
-        hint_.setBounds (strip.removeFromRight (740));
         extras_.setBounds (strip.removeFromRight (70));
         edited_.setBounds (strip.removeFromRight (80));
         presetBox_.setBounds (strip);
@@ -223,6 +218,7 @@ void Jane60Editor::showSettingsMenu (juce::Component* target, juce::StandaloneFi
         sub.addItem (154, "Pressure to both", true, pr == 3);
         m.addSubMenu ("MPE", sub);
     }
+    m.addItem (160, "Keyboard shortcuts...");
     if (window != nullptr)
     {
         m.addSeparator();
@@ -257,6 +253,7 @@ void Jane60Editor::showSettingsMenu (juce::Component* target, juce::StandaloneFi
             case 146: p.setVelocitySoft (! p.velocitySoft()); return;
             case 150: p.setMpe (! p.mpe()); return;
             case 151: case 152: case 153: case 154: p.setPressure (result - 151); return;
+            case 160: ui::ShortcutsComponent::show(); return;
             default: break;
         }
         if (window != nullptr)

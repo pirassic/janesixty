@@ -14,7 +14,7 @@ The unit settings are the condition layer: properties of the unit being emulated
 
 ## Extras
 
-The hardware has no velocity and no MPE. Both are opt-in, off by default, and when off the plugin's output is bit-identical to the plain instrument. A badge ("VEL", "MPE") appears in the preset strip while either is on, because they are not part of the patch.
+The hardware has no velocity and no MPE. Both are opt-in, off by default, and when off the plugin's output is bit-identical to the plain instrument. A badge ("VEL", "MPE") appears in the preset strip while either is on, because they are not part of the patch. "Keyboard shortcuts..." at the bottom of this section opens the computer-keyboard map (`docs/user/keyboard-shortcuts.md`).
 
 | setting | choices | default | what it does |
 |---|---|---|---|

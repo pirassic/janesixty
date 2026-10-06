@@ -1,5 +1,7 @@
 # Keyboard shortcuts
 
+The same list is in the plugin: Settings, then "Keyboard shortcuts..." at the bottom of the Extras section.
+
 These work in the standalone app and in the plugin window when it has keyboard focus (click the on-screen keyboard or the panel first). Inside a DAW the host may capture some keys; the standalone app is the reliable place.
 
 ## Playing notes
