@@ -168,9 +168,26 @@ jobs:
           path: dist/*
           retention-days: 30
 
+  manual:
+    name: User manual PDF
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Render
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y -q pandoc
+          mkdir -p dist
+          bash installer/manual/render.sh docs/user/manual.md dist/Jane-Sixty-manual.pdf "$(which google-chrome || which chromium-browser || which chromium)"
+          ls -la dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-manual
+          path: dist/*.pdf
+          retention-days: 30
+
   publish:
     name: GitHub release
-    needs: [macos, windows]
+    needs: [macos, windows, manual]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     permissions:

@@ -40,4 +40,6 @@ Layout: `src/dsp` (framework-free DSP and calibration, no JUCE), `src/plugin` (J
 - `docs/plan/02-development-plan.md`: stack, architecture, block specs, phases, testing
 - `docs/research/`: compiled research notes; `05-manual-verified-facts.md` is authoritative where notes conflict
 
+User manual: `docs/user/manual.md` (a PDF is attached to each release). Contributions are welcome: see `CONTRIBUTING.md`; a few minutes with a real Juno-60 on a bench would settle most of what the model still assumes.
+
 Roland and Juno are trademarks of Roland Corporation. This project is not affiliated with or endorsed by Roland.
