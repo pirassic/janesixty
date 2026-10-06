@@ -1,3 +1,5 @@
+<img src="assets/icon/jane60-256.png" width="96" alt="Jane-Sixty icon" align="left" style="margin-right:16px">
+
 # Jane-Sixty (jnsynth)
 
 Open-source, component-modelled recreation of the Roland Juno-60 as a native macOS AU and VST3 plugin and standalone app, with a planned scale-and-chord performance layer. Vendor: clevergear. Licence: GPLv3 (JUCE under AGPLv3).

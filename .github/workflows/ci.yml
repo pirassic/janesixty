@@ -70,6 +70,12 @@ jobs:
           echo "au=$(find build -name 'Jane-Sixty.component' -type d | head -1)" >> "$GITHUB_OUTPUT"
           echo "vst3=$(find build -name 'Jane-Sixty.vst3' -type d | head -1)" >> "$GITHUB_OUTPUT"
           echo "app=$(find build -name 'Jane-Sixty.app' -type d | head -1)" >> "$GITHUB_OUTPUT"
+      - name: Check the app icon
+        run: |
+          for b in "${{ steps.art.outputs.app }}" "${{ steps.art.outputs.au }}" "${{ steps.art.outputs.vst3 }}"; do
+            test -s "$b/Contents/Resources/Icon.icns" || { echo "missing Icon.icns in $b"; exit 1; }
+          done
+          iconutil -c iconset -o icons.iconset "${{ steps.art.outputs.app }}/Contents/Resources/Icon.icns" && ls icons.iconset
       - name: Ad-hoc sign bundles
         run: |
           for b in "${{ steps.art.outputs.au }}" "${{ steps.art.outputs.vst3 }}" "${{ steps.art.outputs.app }}"; do
@@ -125,6 +131,15 @@ jobs:
           "vst3=$vst3" >> $env:GITHUB_OUTPUT
           "exe=$exe"   >> $env:GITHUB_OUTPUT
           Write-Host "VST3: $vst3"; Write-Host "Standalone: $exe"
+      - name: Check the exe icon
+        shell: pwsh
+        run: |
+          $exe = "${{ steps.art.outputs.exe }}"
+          Add-Type -AssemblyName System.Drawing
+          $icon = [System.Drawing.Icon]::ExtractAssociatedIcon($exe)
+          if ($null -eq $icon) { throw "no icon resource in $exe" }
+          Write-Host "icon $($icon.Width)x$($icon.Height) in $exe"
+          if (-not (Test-Path (Get-ChildItem -Path build -Recurse -File -Filter 'icon.ico' | Select-Object -First 1).FullName)) { throw "JUCE did not generate icon.ico" }
       - name: pluginval
         shell: pwsh
         run: |

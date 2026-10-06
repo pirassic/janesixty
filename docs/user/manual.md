@@ -3,6 +3,8 @@ title: Jane-Sixty User Manual
 subtitle: A component-modelled Roland Juno-60 for macOS and Windows
 ---
 
+![](../../assets/icon/jane60-256.png){width=96px .icon}
+
 # Jane-Sixty
 
 Jane-Sixty recreates the Roland Juno-60 polyphonic synthesizer of 1982 as an Audio Unit, a VST3 plugin and a standalone application. It is a component model: each part of the original circuit, from the digitally controlled oscillators through the IR3109 filter, the envelopes and the bucket-brigade chorus, is modelled from the Service Notes, the schematics, chip datasheets and published measurements, and the numbers behind every block are kept in a calibration file with their sources. The panel keeps the hardware's layout, names and six-voice polyphony.

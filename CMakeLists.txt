@@ -81,7 +81,9 @@ if(JANE60_BUILD_PLUGIN)
         VST3_CATEGORIES             Instrument Synth
         AU_MAIN_TYPE                kAudioUnitType_MusicDevice
         HARDENED_RUNTIME_ENABLED    TRUE
-        MICROPHONE_PERMISSION_ENABLED FALSE)
+        MICROPHONE_PERMISSION_ENABLED FALSE
+        ICON_BIG                    "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon/jane60-1024.png"
+        ICON_SMALL                  "${CMAKE_CURRENT_SOURCE_DIR}/assets/icon/jane60-128.png")
 
     juce_generate_juce_header(Jane60)
 

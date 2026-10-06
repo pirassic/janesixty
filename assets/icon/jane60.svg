@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Jane-Sixty application and plug-in icon. Master artwork; the PNGs beside it are rendered from this file (see assets/icon/README.md). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a2a2e"/>
+      <stop offset="1" stop-color="#121214"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.07"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <clipPath id="clip">
+      <rect x="64" y="64" width="896" height="896" rx="200" ry="200"/>
+    </clipPath>
+  </defs>
+
+  <!-- panel tile -->
+  <rect x="64" y="64" width="896" height="896" rx="200" ry="200" fill="url(#tile)"/>
+  <rect x="64" y="64" width="896" height="448" clip-path="url(#clip)" fill="url(#gloss)"/>
+  <rect x="72" y="72" width="880" height="880" rx="192" ry="192" fill="none" stroke="#3c3c42" stroke-width="8"/>
+
+  <!-- section bands, as on the front panel legend -->
+  <g clip-path="url(#clip)">
+    <rect x="64" y="64" width="896" height="124" fill="#e6e1d3"/>
+    <rect x="64" y="64" width="896" height="124" fill="#b0372f" transform="translate(358 0)"/>
+    <rect x="64" y="64" width="896" height="124" fill="#2f5fa8" transform="translate(650 0)"/>
+    <rect x="64" y="180" width="896" height="12" fill="#0b0b0c"/>
+  </g>
+
+  <!-- DCO sawtooth -->
+  <path d="M 148 760 L 416 436 L 416 760 L 684 436 L 684 760 L 876 528"
+        fill="none" stroke="#ff9f40" stroke-width="66" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

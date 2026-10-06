@@ -11,3 +11,5 @@ code { font-family: Menlo, Consolas, monospace; font-size: 9.2pt; background: #f
 pre { background: #f4f4f4; padding: 8px 10px; border-radius: 4px; font-size: 9.2pt; }
 li { margin: 0.2em 0; }
 header#title-block-header { margin-bottom: 2em; }
+
+img.icon { display: block; width: 96px; height: 96px; margin: 0 0 12px 0; }

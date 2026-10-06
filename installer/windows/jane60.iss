@@ -22,6 +22,7 @@ SolidCompression=yes
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
+SetupIconFile=jane60.ico
 UninstallDisplayIcon={app}\Jane-Sixty.exe
 
 [Components]
