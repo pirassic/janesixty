@@ -13,7 +13,7 @@ Notes p.9 (R14 10 k, R5 47 k, R3 100 k, R1 1.5 k) run as drawn.
 
 Modes:
   model    loop sum as the plugin forms it: x1 = in (1 + comp k) - k y4
-  network  the p.9 resistor network with the BA662 as a differential
+  network  the p.9 resistor network, stage 1 wired as drawn (summing node), with the BA662 as a differential
            transconductance: compensation leg R5 47 k into pin 3 (+) with R2
            1.5 k, feedback leg R3 100 k into pin 2 (-) with R1 1.5 k, output
            current into node A (R14 10 k from the mixer, R7 68 k / R6 560 load).
@@ -55,10 +55,15 @@ Vkick kick 0 pulse(0 0.05 0 1u 1u 200u 10)
     if mode == "model":
         body = f"Bsum x1 0 V = (v(mix)+v(kick))*(1+{comp}*{k}) - {k}*v(y4)\n" + stages("x1")
     else:
-        body = f"""* Service Notes p.9: R14 10 k from the mixer into node a; stage 1 input divider R7 68 k / R6 560 as load
+        body = f"""* Service Notes p.9 (IR3109 pins, read 2026-10-06): R14 10 k from the mixer, the BA662 output and
+* R6 560 all meet at the pin 2 node (stage 1 input); R7 68 k returns stage 1's own output (pin 4) to
+* that node, as R8 / R11 / R16 do for the other stages. The input node is therefore a current-summing
+* node with gain 68 k / 10 k = 6.8 for the mixer and 68 k for the resonance current, which is what
+* makes the compensation coefficient (47 k / 1.5 k against 100 k / 1.5 k) / 6.8 = 0.308.
 R14 mix na 10k
-R7 na s1 68k
-R6 s1 0 560
+R6 na 0 560
+Einv y1n 0 y1 0 -1
+R7 y1n na 68k
 Rkick kick na 10Meg
 * BA662 (+) input: R5 47 k from the mixer side of R14, R2 1.5 k to ground (compensation)
 R5 mix np 47k
@@ -70,7 +75,7 @@ R3 y4b nm 100k
 R1 nm 0 1.5k
 * BA662 output current into node A; small-signal gm = GM, tanh limited at 2Vt
 Bres 0 na I = {gm}*VT2*tanh((v(np)-v(nm))/VT2)
-""" + stages("na")
+""" + stages("na").replace("B1 0 y1 I = I0*tanh(ATT*(v(na)-v(y1))/VT2)", "B1 0 y1 I = I0*tanh(v(na)/VT2)")
     return head + body + "\n" + analysis + "\n.end\n"
 
 def run(net, workdir, outname):

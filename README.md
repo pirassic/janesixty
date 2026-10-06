@@ -13,7 +13,7 @@ Jane-Sixty is modelled from documents, not from a unit on the bench. What that m
 - **From published measurements of real units**: envelope, LFO and chorus delay tables, the BBD path gain.
 - **Fitted to Roland's factory demo recording** (the 56 patches, 128 kbps MP3): the FREQ slider slope and the resonance compensation sign. Band balance over the bank sits within about 3 dB of the recording, stereo width within about 1 dB, attack faster than any onset in the recording.
 - **Assumed, with an uncertainty, and exposed as user settings where audible**: the drive into the IR3109 (the mixer legs are not legible on the available scan; +-6 dB offered), the BBD hiss level (aged setting offered), per-voice tolerances (voice spread, Service Notes tolerances by default), the unit's VCF trim (the demo unit sits one octave above the manual; both offered), a +1 dB shelf below 150 Hz.
-- **Not modelled**: DCO saw flyback shape, supply coupling into the noise, BBD clock residue, the DCO reset transient. The resonance compensation coefficient is fitted to the recording; it matches the schematic if one resistor (R2 on the BA662's pin 3) is 220 Ohm rather than the 1.5 k read from the scan (see the report).
+- **Not modelled**: DCO saw flyback shape, supply coupling into the noise, BBD clock residue, the DCO reset transient.
 
 If you can put a Juno-60 on a bench, `docs/research/08-bench-protocol.md` says what to capture; the calibration file is designed to be replaced without touching the DSP.
 

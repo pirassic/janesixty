@@ -57,8 +57,8 @@ def main():
     net = load(os.path.join(a.ref, "network.csv"))
     if net:
         n = net[0]
-        lines += ["", f"Network as drawn (differential BA662: 47 k compensation into pin 3, 100 k feedback into pin 2): oscillation threshold GM_osc = {float(n['gmOsc']) * 1e3:.3f} mA/V; at k {n['k']} and corner {float(n['cornerHz']):.1f} Hz it oscillates at {float(n['oscHz']):.2f} Hz, {float(n['vpp']):.3f} Vp-p (plugin output units at the filter output node)."]
-    lines += ["", "The `network` rows are the p.9 resistor network run as drawn, on a resonance axis normalised by its own simulated oscillation threshold. They say what the drawn compensation does to the passband; the `model` rows use the plugin-derived 0.308 coefficient, which was fitted to a ~7 dB loss at full resonance whose hardware provenance is not established.", ""]
+        lines += ["", f"Network as drawn (stage 1 summing node, differential BA662: 47 k compensation into pin 3, 100 k feedback into pin 2): oscillation threshold GM_osc = {float(n['gmOsc']) * 1e3:.3f} mA/V; at k {n['k']} and corner {float(n['cornerHz']):.1f} Hz it oscillates at {float(n['oscHz']):.2f} Hz, {float(n['vpp']):.3f} Vp-p (plugin output units at the filter output node)."]
+    lines += ["", "The `network` rows are the p.9 resistor network run as drawn, on a resonance axis normalised by its own simulated oscillation threshold. With stage 1 wired as the scan shows (a current-summing input node with R7 68 k as feedback) they reproduce the `model` rows, whose 0.308 coefficient is the schematic's (47 k / 1.5 k against 100 k / 1.5 k, divided by the 68 k / 10 k input gain).", ""]
     lines.append("**Result: all within tolerance.**" if ok else "**Result: at least one measurement outside tolerance (!).**")
     with open(a.out, "w") as f:
         f.write("\n".join(lines) + "\n")

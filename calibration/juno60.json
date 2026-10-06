@@ -28,7 +28,7 @@
     "inputResistorOhm":       { "value": 68000, "source": "schematic p.9 (standard IR3109 network)" },
     "shuntResistorOhm":       { "value": 560,   "source": "schematic p.9" },
     "stageCapPf":             { "value": 240,   "source": "schematic p.9" },
-    "qCompensation":          { "value": 0.308, "source": "plugin-derived; confirmed to about 2 dB by the loudness balance of resonant vs non-resonant patches in the factory demo recording (docs/calibration-report.md). The p.9 network with an ideal BA662 predicts the opposite sign; the chip's input weighting is the open item" },
+    "qCompensation":          { "value": 0.308, "source": "schematic p.9: the stage 1 input (IR3109 pin 2) is a current-summing node (R6 560 to ground, R7 68 k from the stage output), so the mixer enters with gain 68 k / 10 k = 6.8 and the BA662 current with 68 k; compensation leg 47 k with 1.5 k to ground into pin 3 against feedback leg 100 k with 1.5 k into pin 2: (1.5/48.5) / (1.5/101.5) / 6.8 = 0.308. ngspice network run reproduces the passband curve within 0.1 dB (2026-10-06); the demo recording's loudness balance agrees within 2 dB" },
     "anchorSliderPos":        { "value": 3.0,   "source": "service-notes p.22 Table 6 patch 84, p.24 adj.8-2" },
     "anchorHz":               { "value": 248.0, "source": "service-notes p.24 adj.8-2" },
     "trimOffsetOct":          { "value": 1.0,   "source": "assumed: unit trim. The factory demo recording sits about 1.2 octaves above the Service Notes trim at every FREQ setting (tools/listen, docs/research/10); 0 restores the manual's calibration" },
