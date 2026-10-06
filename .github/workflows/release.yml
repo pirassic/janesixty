@@ -90,9 +90,23 @@ jobs:
           cp -R "${{ steps.art.outputs.au }}" pkgroot/au/
           cp -R "${{ steps.art.outputs.vst3 }}" pkgroot/vst3/
           cp -R "${{ steps.art.outputs.app }}" pkgroot/app/
-          pkgbuild --root pkgroot/au   --identifier com.clevergear.jane60.au   --version "$V" --install-location /Library/Audio/Plug-Ins/Components pkg/au.pkg
-          pkgbuild --root pkgroot/vst3 --identifier com.clevergear.jane60.vst3 --version "$V" --install-location /Library/Audio/Plug-Ins/VST3 pkg/vst3.pkg
-          pkgbuild --root pkgroot/app  --identifier com.clevergear.jane60.app  --version "$V" --install-location /Applications pkg/app.pkg
+          # Component plists with BundleIsRelocatable off: otherwise Installer "relocates" each bundle to
+          # wherever Spotlight already finds a copy with the same bundle id (a zip unpacked in Documents,
+          # say) instead of the install location.
+          for c in au vst3 app; do
+            pkgbuild --analyze --root "pkgroot/$c" "pkg/$c.plist"
+            n=$(/usr/libexec/PlistBuddy -c "Print" "pkg/$c.plist" | grep -c BundleIsRelocatable)
+            for ((i=0; i<n; i++)); do /usr/libexec/PlistBuddy -c "Set :$i:BundleIsRelocatable false" "pkg/$c.plist"; done
+            grep -A1 BundleIsRelocatable "pkg/$c.plist" | grep -q '<false/>' || { echo "relocation not disabled in $c.plist"; exit 1; }
+          done
+          pkgbuild --root pkgroot/au   --component-plist pkg/au.plist   --identifier com.clevergear.jane60.au   --version "$V" --install-location /Library/Audio/Plug-Ins/Components pkg/au.pkg
+          pkgbuild --root pkgroot/vst3 --component-plist pkg/vst3.plist --identifier com.clevergear.jane60.vst3 --version "$V" --install-location /Library/Audio/Plug-Ins/VST3 pkg/vst3.pkg
+          pkgbuild --root pkgroot/app  --component-plist pkg/app.plist  --identifier com.clevergear.jane60.app  --version "$V" --install-location /Applications pkg/app.pkg
+          for c in au vst3 app; do
+            rm -rf "expand-$c"; pkgutil --expand "pkg/$c.pkg" "expand-$c"
+            grep -o 'install-location="[^"]*"' "expand-$c/PackageInfo"
+            if grep -q '<relocate>' "expand-$c/PackageInfo"; then echo "$c.pkg still carries a relocate block"; exit 1; fi
+          done
           sed "s/VERSION/$V/g" installer/macos/distribution.xml > pkg/distribution.xml
           cp installer/macos/welcome.txt installer/macos/background.png installer/macos/background@2x.png LICENSE pkg/
           OUT="dist/Jane-Sixty-$V-macOS.pkg"

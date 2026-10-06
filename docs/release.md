@@ -33,3 +33,6 @@ The installer and the VST3 are unsigned; SmartScreen warns until the files gain 
 
 - macOS `.pkg`: three selectable components, the AU to `/Library/Audio/Plug-Ins/Components`, the VST3 to `/Library/Audio/Plug-Ins/VST3`, the app to `/Applications`. Sources in `installer/macos/`.
 - Windows setup: the VST3 to `Common Files\VST3`, the app to `Program Files\clevergear\Jane-Sixty` with a Start Menu entry and an uninstaller. Source in `installer/windows/jane60.iss`.
+
+
+The macOS component packages are built with `BundleIsRelocatable` off. Without that, Installer moves each bundle to wherever Spotlight already finds a copy with the same bundle id, so a zip unpacked in Documents would be updated in place instead of `/Applications` getting the app.
