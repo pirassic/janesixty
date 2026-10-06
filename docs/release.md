@@ -18,7 +18,7 @@ Status 2026-10-06: all six secrets are set and the signed path is verified (Rele
 ## Each release
 
 1. Bump `project(Jane60 VERSION x.y.z)` in `CMakeLists.txt` (the plugin reports this version to hosts) and merge to the branch being released.
-2. Tag and push: `git tag v1.0.0 && git push origin v1.0.0`.
+2. Tag and push: `git tag v0.9.0 && git push origin v0.9.0`. The first public release is 0.9; 1.0 follows the owner's listening pass and host checks.
 3. The **Release** workflow builds macOS (universal, signed, notarised, stapled `.pkg` plus bare-bundle zips) and Windows (Inno Setup installer plus zips), then opens a **draft** GitHub release with the assets and generated notes. About 25 minutes.
 4. Check the draft: install the `.pkg` on a clean Mac (no quarantine prompt means notarisation worked), run the Windows installer in a VM, then publish.
 
@@ -26,7 +26,7 @@ A dry run without publishing: push the commit to a branch named `release-test/<a
 
 ## Windows signing (optional)
 
-The installer and the VST3 are unsigned; SmartScreen warns until the files gain reputation. A code-signing certificate (OV or EV) would be added as a `signtool` step before the Inno Setup step. Not planned for v1.0.
+The installer and the VST3 are unsigned; SmartScreen warns until the files gain reputation. A code-signing certificate (OV or EV) would be added as a `signtool` step before the Inno Setup step. Not planned before 1.0.
 
 ## What the installers do
 

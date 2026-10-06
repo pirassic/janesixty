@@ -91,7 +91,7 @@ jobs:
           pkgbuild --root pkgroot/vst3 --identifier com.clevergear.jane60.vst3 --version "$V" --install-location /Library/Audio/Plug-Ins/VST3 pkg/vst3.pkg
           pkgbuild --root pkgroot/app  --identifier com.clevergear.jane60.app  --version "$V" --install-location /Applications pkg/app.pkg
           sed "s/VERSION/$V/g" installer/macos/distribution.xml > pkg/distribution.xml
-          cp installer/macos/welcome.txt LICENSE pkg/
+          cp installer/macos/welcome.txt installer/macos/background.png installer/macos/background@2x.png LICENSE pkg/
           OUT="dist/Jane-Sixty-$V-macOS.pkg"
           if [ "${{ steps.cert.outputs.signed }}" = "true" ]; then
             productbuild --distribution pkg/distribution.xml --resources pkg --package-path pkg --sign "${{ steps.cert.outputs.inst_identity }}" --timestamp "$OUT"

@@ -9,7 +9,7 @@ if(APPLE AND NOT CMAKE_OSX_DEPLOYMENT_TARGET)
 endif()
 
 project(Jane60
-    VERSION 0.0.1
+    VERSION 0.9.0
     DESCRIPTION "Jane-Sixty: a component-modelled Roland Juno-60 synthesizer plugin"
     LANGUAGES C CXX)
 

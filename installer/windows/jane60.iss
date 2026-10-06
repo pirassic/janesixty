@@ -23,6 +23,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
 SetupIconFile=jane60.ico
+WizardSmallImageFile=wizard-small-55x58.bmp,wizard-small-64x68.bmp,wizard-small-83x80.bmp,wizard-small-92x97.bmp,wizard-small-110x106.bmp,wizard-small-119x123.bmp,wizard-small-138x140.bmp
 UninstallDisplayIcon={app}\Jane-Sixty.exe
 
 [Components]

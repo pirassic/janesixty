@@ -3,6 +3,8 @@
     <title>Jane-Sixty</title>
     <options customize="allow" require-scripts="false" hostArchitectures="arm64,x86_64"/>
     <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
+    <background file="background.png" alignment="bottomleft" scaling="none"/>
+    <background-darkAqua file="background.png" alignment="bottomleft" scaling="none"/>
     <welcome file="welcome.txt" mime-type="text/plain"/>
     <license file="LICENSE" mime-type="text/plain"/>
     <choices-outline>
