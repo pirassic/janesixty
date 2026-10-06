@@ -76,9 +76,12 @@ jobs:
       - name: Check the app icon
         run: |
           for b in "${{ steps.art.outputs.app }}" "${{ steps.art.outputs.au }}" "${{ steps.art.outputs.vst3 }}"; do
-            test -s "$b/Contents/Resources/Icon.icns" || { echo "missing Icon.icns in $b"; exit 1; }
+            icns=$(ls "$b"/Contents/Resources/*.icns 2>/dev/null | head -1)
+            test -s "$icns" || { echo "no .icns in $b/Contents/Resources"; ls "$b/Contents/Resources"; exit 1; }
+            grep -q "$(basename "$icns" .icns)" "$b/Contents/Info.plist" || { echo "Info.plist in $b does not name $icns"; exit 1; }
           done
-          iconutil -c iconset -o icons.iconset "${{ steps.art.outputs.app }}/Contents/Resources/Icon.icns" && ls icons.iconset
+          icns=$(ls "${{ steps.art.outputs.app }}"/Contents/Resources/*.icns | head -1)
+          iconutil -c iconset -o icons.iconset "$icns" && ls icons.iconset
       - name: Ad-hoc sign bundles
         run: |
           for b in "${{ steps.art.outputs.au }}" "${{ steps.art.outputs.vst3 }}" "${{ steps.art.outputs.app }}"; do
