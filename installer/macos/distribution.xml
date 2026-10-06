@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="1">
+    <title>Jane-Sixty</title>
+    <options customize="allow" require-scripts="false" hostArchitectures="arm64,x86_64"/>
+    <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
+    <welcome file="welcome.txt" mime-type="text/plain"/>
+    <license file="LICENSE" mime-type="text/plain"/>
+    <choices-outline>
+        <line choice="au"/>
+        <line choice="vst3"/>
+        <line choice="app"/>
+    </choices-outline>
+    <choice id="au" title="Audio Unit" description="Jane-Sixty.component into /Library/Audio/Plug-Ins/Components (Logic, GarageBand, MainStage).">
+        <pkg-ref id="com.clevergear.jane60.au"/>
+    </choice>
+    <choice id="vst3" title="VST3" description="Jane-Sixty.vst3 into /Library/Audio/Plug-Ins/VST3 (Cubase, Live, Reaper, Bitwig).">
+        <pkg-ref id="com.clevergear.jane60.vst3"/>
+    </choice>
+    <choice id="app" title="Standalone application" description="Jane-Sixty.app into /Applications.">
+        <pkg-ref id="com.clevergear.jane60.app"/>
+    </choice>
+    <pkg-ref id="com.clevergear.jane60.au" version="VERSION">au.pkg</pkg-ref>
+    <pkg-ref id="com.clevergear.jane60.vst3" version="VERSION">vst3.pkg</pkg-ref>
+    <pkg-ref id="com.clevergear.jane60.app" version="VERSION">app.pkg</pkg-ref>
+</installer-gui-script>

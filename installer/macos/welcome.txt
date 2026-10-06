@@ -1,0 +1,5 @@
+Jane-Sixty: a component-modelled Roland Juno-60.
+
+This installs the Audio Unit, the VST3 and the standalone application. Each can be deselected on the next page.
+
+Jane-Sixty is free software under the GNU General Public License v3. Roland and Juno are trademarks of Roland Corporation; this software is not affiliated with or endorsed by Roland.

@@ -1,0 +1,186 @@
+# Release pipeline (phase 6). Runs on a version tag (v1.0.0) or by hand. macOS: universal build,
+# Developer ID signing with hardened runtime, .pkg installer, notarisation and stapling when the
+# secrets exist (unsigned installer with a warning when they do not). Windows: Inno Setup installer
+# and zips. Then a GitHub release carrying everything.
+#
+# Secrets (Settings > Secrets and variables > Actions):
+#   MACOS_CERTIFICATE_P12        base64 of a .p12 holding BOTH "Developer ID Application" and
+#                                "Developer ID Installer" certificates with their private keys
+#   MACOS_CERTIFICATE_PASSWORD   the .p12 password
+#   APPLE_TEAM_ID                10-character team id
+#   NOTARY_KEY_ID, NOTARY_ISSUER_ID, NOTARY_KEY_P8   an App Store Connect API key (Developer role),
+#                                the .p8 contents base64
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  macos:
+    name: macOS installer (signed and notarised when secrets exist)
+    runs-on: macos-15
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Version from the tag
+        id: ver
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then v="${GITHUB_REF#refs/tags/v}"; else v="0.0.0-$(git rev-parse --short HEAD)"; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"; echo "version $v"
+      - name: Configure and build
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+          cmake --build build
+          ctest --test-dir build --output-on-failure
+      - name: Locate artefacts
+        id: art
+        run: |
+          echo "au=$(find build -name 'Jane-Sixty.component' -type d | head -1)" >> "$GITHUB_OUTPUT"
+          echo "vst3=$(find build -name 'Jane-Sixty.vst3' -type d | head -1)" >> "$GITHUB_OUTPUT"
+          echo "app=$(find build -name 'Jane-Sixty.app' -type d | head -1)" >> "$GITHUB_OUTPUT"
+      - name: Import the Developer ID certificates
+        id: cert
+        env:
+          P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          P12_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -z "$P12" ]; then echo "signed=false" >> "$GITHUB_OUTPUT"; echo "::warning::No MACOS_CERTIFICATE_P12 secret: the installer will be unsigned and not notarised."; exit 0; fi
+          echo "$P12" | base64 --decode > cert.p12
+          KEYCHAIN="$RUNNER_TEMP/build.keychain-db"
+          security create-keychain -p "" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "" "$KEYCHAIN"
+          security import cert.p12 -P "$P12_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "" "$KEYCHAIN"
+          security list-keychain -d user -s "$KEYCHAIN" login.keychain
+          rm cert.p12
+          APP_ID=$(security find-identity -v -p codesigning "$KEYCHAIN" | grep "Developer ID Application" | head -1 | awk -F'"' '{print $2}')
+          INST_ID=$(security find-identity -v "$KEYCHAIN" | grep "Developer ID Installer" | head -1 | awk -F'"' '{print $2}')
+          if [ -z "$APP_ID" ] || [ -z "$INST_ID" ]; then echo "::error::The .p12 must hold both Developer ID Application and Developer ID Installer identities"; exit 1; fi
+          echo "app_identity=$APP_ID" >> "$GITHUB_OUTPUT"
+          echo "inst_identity=$INST_ID" >> "$GITHUB_OUTPUT"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
+      - name: Sign the bundles
+        run: |
+          for b in "${{ steps.art.outputs.au }}" "${{ steps.art.outputs.vst3 }}" "${{ steps.art.outputs.app }}"; do
+            chmod -R u+rwX "$b"; find "$b/Contents/MacOS" -type f -exec chmod +x {} +
+            if [ "${{ steps.cert.outputs.signed }}" = "true" ]; then
+              codesign --force --deep --options runtime --timestamp -s "${{ steps.cert.outputs.app_identity }}" "$b"
+            else
+              codesign --force --deep --options runtime --timestamp=none -s - "$b"
+            fi
+            codesign --verify --deep --strict "$b"
+          done
+      - name: Build the installer package
+        run: |
+          V="${{ steps.ver.outputs.version }}"
+          mkdir -p pkgroot/au pkgroot/vst3 pkgroot/app pkg dist
+          cp -R "${{ steps.art.outputs.au }}" pkgroot/au/
+          cp -R "${{ steps.art.outputs.vst3 }}" pkgroot/vst3/
+          cp -R "${{ steps.art.outputs.app }}" pkgroot/app/
+          pkgbuild --root pkgroot/au   --identifier com.clevergear.jane60.au   --version "$V" --install-location /Library/Audio/Plug-Ins/Components pkg/au.pkg
+          pkgbuild --root pkgroot/vst3 --identifier com.clevergear.jane60.vst3 --version "$V" --install-location /Library/Audio/Plug-Ins/VST3 pkg/vst3.pkg
+          pkgbuild --root pkgroot/app  --identifier com.clevergear.jane60.app  --version "$V" --install-location /Applications pkg/app.pkg
+          sed "s/VERSION/$V/g" installer/macos/distribution.xml > pkg/distribution.xml
+          cp installer/macos/welcome.txt LICENSE pkg/
+          OUT="dist/Jane-Sixty-$V-macOS.pkg"
+          if [ "${{ steps.cert.outputs.signed }}" = "true" ]; then
+            productbuild --distribution pkg/distribution.xml --resources pkg --package-path pkg --sign "${{ steps.cert.outputs.inst_identity }}" --timestamp "$OUT"
+          else
+            productbuild --distribution pkg/distribution.xml --resources pkg --package-path pkg "$OUT"
+          fi
+          ls -la dist
+      - name: Notarise and staple
+        if: steps.cert.outputs.signed == 'true'
+        env:
+          KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          KEY_P8: ${{ secrets.NOTARY_KEY_P8 }}
+        run: |
+          if [ -z "$KEY_ID" ] || [ -z "$ISSUER_ID" ] || [ -z "$KEY_P8" ]; then echo "::warning::Notary secrets missing: the package is signed but not notarised."; exit 0; fi
+          echo "$KEY_P8" | base64 --decode > AuthKey.p8
+          PKG=$(ls dist/*.pkg)
+          xcrun notarytool submit "$PKG" --key AuthKey.p8 --key-id "$KEY_ID" --issuer "$ISSUER_ID" --wait --timeout 30m
+          xcrun stapler staple "$PKG"
+          xcrun stapler validate "$PKG"
+          spctl --assess --type install -v "$PKG"
+          rm AuthKey.p8
+      - name: Zips of the bare bundles (for users who prefer them)
+        run: |
+          V="${{ steps.ver.outputs.version }}"
+          ditto -c -k --keepParent "${{ steps.art.outputs.au }}" "dist/Jane-Sixty-$V-macOS-AU.zip"
+          ditto -c -k --keepParent "${{ steps.art.outputs.vst3 }}" "dist/Jane-Sixty-$V-macOS-VST3.zip"
+          ditto -c -k --keepParent "${{ steps.art.outputs.app }}" "dist/Jane-Sixty-$V-macOS-Standalone.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-macos
+          path: dist/*
+          retention-days: 30
+
+  windows:
+    name: Windows installer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Version from the tag
+        id: ver
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then v="${GITHUB_REF#refs/tags/v}"; else v="0.0.0-$(git rev-parse --short HEAD)"; fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"; echo "version $v"
+      - name: Configure and build
+        run: |
+          cmake -S . -B build -A x64 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 4
+          ctest --test-dir build -C ${{ env.BUILD_TYPE }} --output-on-failure
+      - name: Collect artefacts
+        shell: pwsh
+        run: |
+          $vst3 = (Get-ChildItem -Path build -Recurse -Directory -Filter 'Jane-Sixty.vst3' | Select-Object -First 1).FullName
+          $exe  = (Get-ChildItem -Path build -Recurse -File -Filter 'Jane-Sixty.exe' | Select-Object -First 1).FullName
+          New-Item -ItemType Directory -Force -Path dist-src, dist | Out-Null
+          Copy-Item -Recurse $vst3 dist-src/
+          Copy-Item $exe dist-src/
+          Get-ChildItem -Recurse dist-src | Select-Object FullName
+      - name: Inno Setup installer
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DVersion=$v" "/DSourceDir=$PWD\dist-src" "/Odist" installer\windows\jane60.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          Compress-Archive -Path dist-src/Jane-Sixty.vst3 -DestinationPath "dist/Jane-Sixty-$v-win64-VST3.zip"
+          Compress-Archive -Path dist-src/Jane-Sixty.exe -DestinationPath "dist/Jane-Sixty-$v-win64-Standalone.zip"
+          Get-ChildItem dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: dist/*
+          retention-days: 30
+
+  publish:
+    name: GitHub release
+    needs: [macos, windows]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: assets/**/*
+          generate_release_notes: true
+          draft: true
