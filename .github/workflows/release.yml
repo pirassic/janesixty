@@ -123,7 +123,7 @@ jobs:
           ditto -c -k --keepParent "${{ steps.art.outputs.au }}" "dist/Jane-Sixty-$V-macOS-AU.zip"
           ditto -c -k --keepParent "${{ steps.art.outputs.vst3 }}" "dist/Jane-Sixty-$V-macOS-VST3.zip"
           ditto -c -k --keepParent "${{ steps.art.outputs.app }}" "dist/Jane-Sixty-$V-macOS-Standalone.zip"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-macos
           path: dist/*
@@ -172,7 +172,7 @@ jobs:
           Compress-Archive -Path dist-src/Jane-Sixty.exe -DestinationPath "dist/Jane-Sixty-$v-win64-Standalone.zip"
           Get-ChildItem dist
           foreach ($f in Get-ChildItem dist) { if ($f.Length -lt 1MB) { throw "$($f.Name) is only $($f.Length) bytes" } }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-windows
           path: dist/*
@@ -189,7 +189,7 @@ jobs:
           mkdir -p dist
           bash installer/manual/render.sh docs/user/manual.md dist/Jane-Sixty-manual.pdf "$(which google-chrome || which chromium-browser || which chromium)"
           ls -la dist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-manual
           path: dist/*.pdf

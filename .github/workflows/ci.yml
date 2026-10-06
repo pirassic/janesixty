@@ -48,7 +48,7 @@ jobs:
           for f in sim/ref/*.csv sim/dsp/*.csv; do echo "== $f"; cat "$f"; done
       - name: Compare
         run: python3 tools/sim/compare.py --ref sim/ref --dsp sim/dsp --out sim/ir3109-report.md
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: sim-reference-report
           path: sim/
@@ -109,7 +109,7 @@ jobs:
           ditto -c -k --keepParent "${{ steps.art.outputs.au }}" dist/Jane-Sixty-AU.zip
           ditto -c -k --keepParent "${{ steps.art.outputs.vst3 }}" dist/Jane-Sixty-VST3.zip
           ditto -c -k --keepParent "${{ steps.art.outputs.app }}" dist/Jane-Sixty-Standalone.zip
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: jane60-macos-unsigned
           path: dist/*.zip
@@ -170,7 +170,7 @@ jobs:
           Compress-Archive -Path dist-src/Jane-Sixty.vst3 -DestinationPath dist/Jane-Sixty-VST3-win64.zip
           Compress-Archive -Path dist-src/Jane-Sixty.exe -DestinationPath dist/Jane-Sixty-Standalone-win64.zip
           foreach ($f in Get-ChildItem dist) { if ($f.Length -lt 1MB) { throw "$($f.Name) is only $($f.Length) bytes" } }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: jane60-windows-unsigned
           path: dist/*.zip
