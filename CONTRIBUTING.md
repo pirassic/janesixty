@@ -21,7 +21,7 @@ Thank you for considering it. Jane-Sixty is a component model of the Roland Juno
 ## Working on the code
 
 ```
-git clone --recurse-submodules https://github.com/pirassic/jnsynth.git
+git clone --recurse-submodules https://github.com/pirassic/janesixty.git
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build && ctest --test-dir build
 ```

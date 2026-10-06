@@ -1,4 +1,4 @@
-# jnsynth: project overview and decisions
+# Jane-Sixty (janesixty): project overview and decisions
 
 Goal: an open-source, component-modelled (not sampled) recreation of the Roland Juno-60 as a native macOS AU and VST3 plugin and standalone app, with a panel that matches the original in layout and feel plus modern preset management, A/B compare, a full MIDI implementation, and a later Polyend-style scale and chord performance layer.
 

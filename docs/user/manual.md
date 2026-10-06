@@ -177,7 +177,7 @@ If you can put a real Juno-60 on a bench, even for ten minutes, the bench protoc
 
 # Contributing
 
-Jane-Sixty is open source under GPLv3, developed in the open at `github.com/pirassic/jnsynth`, and contributions are welcome: bug reports, listening notes against real units, bench measurements, schematic readings, code and documentation. The most valuable contribution of all is a capture from a real Juno-60; the research folder says exactly what to record and why.
+Jane-Sixty is open source under GPLv3, developed in the open at `github.com/pirassic/janesixty`, and contributions are welcome: bug reports, listening notes against real units, bench measurements, schematic readings, code and documentation. The most valuable contribution of all is a capture from a real Juno-60; the research folder says exactly what to record and why.
 
 To build from source you need CMake 3.25, a C++20 compiler and, for the plugin, the JUCE submodule; the README has the commands for macOS, Windows and Linux. The DSP has no framework dependency and its tests run on Linux in under a minute. Changes to the sound model should come with a source for every number, and go into the calibration file rather than the code wherever possible; the calibration report explains the tagging. Open an issue to discuss anything larger than a fix before building it, so the work lands.
 

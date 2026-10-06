@@ -1,4 +1,4 @@
-# Release pipeline (phase 6). Runs on a version tag (v1.0.0) or by hand. macOS: universal build,
+# Release pipeline (phase 6). Runs on a version tag (v0.9.0) or by hand. macOS: universal build,
 # Developer ID signing with hardened runtime, .pkg installer, notarisation and stapling when the
 # secrets exist (unsigned installer with a warning when they do not). Windows: Inno Setup installer
 # and zips. Then a GitHub release carrying everything.
@@ -17,6 +17,9 @@ on:
     tags: ["v*"]
     branches: ["release-test/**"]   # a throwaway branch runs the build and installer jobs without publishing
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 env:
   BUILD_TYPE: Release

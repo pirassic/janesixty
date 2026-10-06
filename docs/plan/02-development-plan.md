@@ -21,7 +21,7 @@ Naming: **Jane-Sixty**, vendor **clevergear** (display name changeable at any ti
 ## 2. Architecture
 
 ```
-jnsynth/
+janesixty/
   CMakeLists.txt
   cmake/                 toolchain, signing, pluginval helpers
   libs/                  JUCE and third-party as submodules

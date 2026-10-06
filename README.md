@@ -1,6 +1,6 @@
 <img src="assets/icon/jane60-256.png" width="96" alt="Jane-Sixty icon" align="left" style="margin-right:16px">
 
-# Jane-Sixty (jnsynth)
+# Jane-Sixty
 
 Open-source, component-modelled recreation of the Roland Juno-60 as a native macOS AU and VST3 plugin and standalone app, with a planned scale-and-chord performance layer. Vendor: clevergear. Licence: GPLv3 (JUCE under AGPLv3).
 
@@ -26,8 +26,8 @@ Releases carry a notarised macOS installer (`Jane-Sixty-x.y.z-macOS.pkg`: AU, VS
 ## Build
 
 ```
-git clone --recurse-submodules https://github.com/pirassic/jnsynth.git
-cd jnsynth
+git clone --recurse-submodules https://github.com/pirassic/janesixty.git
+cd janesixty
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ctest --test-dir build
