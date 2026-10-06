@@ -4,7 +4,7 @@
 
 Open-source, component-modelled recreation of the Roland Juno-60 as a native macOS AU and VST3 plugin and standalone app, with a planned scale-and-chord performance layer. Vendor: clevergear. Licence: GPLv3 (JUCE under AGPLv3).
 
-Status: phase 5 (Windows build, velocity and MPE opt-ins) in progress; phase 4 (calibration) complete.
+Status: v0.9.0 released 2026-10-06 as a pre-release ([Releases](https://github.com/pirassic/janesixty/releases)); 1.0 follows the owner's host checks in Logic and Cubase.
 
 ## Fidelity
 
@@ -21,7 +21,7 @@ If you can put a Juno-60 on a bench, `docs/research/08-bench-protocol.md` says w
 
 ## Install
 
-Releases carry a notarised macOS installer (`Jane-Sixty-x.y.z-macOS.pkg`: AU, VST3 and the standalone app, each selectable) and a Windows installer (`Jane-Sixty-x.y.z-win64-setup.exe`: VST3 and the app). The bare bundles are also attached as zips; on macOS a zipped bundle downloaded by a browser is quarantined, so the installer is the easy path. CI artifacts from ordinary pushes are unsigned development builds: on macOS remove the quarantine with `xattr -dr com.apple.quarantine <bundle>` before use.
+Download from the [Releases page](https://github.com/pirassic/janesixty/releases). Releases carry a notarised macOS installer (`Jane-Sixty-x.y.z-macOS.pkg`: AU, VST3 and the standalone app, each selectable) and a Windows installer (`Jane-Sixty-x.y.z-win64-setup.exe`: VST3 and the app). The bare bundles are also attached as zips; on macOS a zipped bundle downloaded by a browser is quarantined, so the installer is the easy path. CI artifacts from ordinary pushes are unsigned development builds: on macOS remove the quarantine with `xattr -dr com.apple.quarantine <bundle>` before use.
 
 ## Build
 
