@@ -17,7 +17,7 @@ jobs:
     name: DSP library and tests (Linux, no JUCE)
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DJANE60_BUILD_PLUGIN=OFF
       - name: Build
@@ -29,7 +29,7 @@ jobs:
     name: Reference simulation (ngspice) vs plugin blocks
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install ngspice and numpy
         run: |
           sudo apt-get update -q
@@ -58,7 +58,7 @@ jobs:
     name: Plugin (macOS universal, AU + VST3 + Standalone)
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: Configure
@@ -119,7 +119,7 @@ jobs:
     name: Plugin (Windows x64, VST3 + Standalone)
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
       - name: Configure
