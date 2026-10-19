@@ -6,7 +6,7 @@ Open-source, component-modelled recreation of the Roland Juno-60 as a native mac
 
 ![The Jane-Sixty panel: the front panel sections, the keyboard and the preset bar](docs/images/panel.png)
 
-Status: v0.9.0 released 2026-10-06 as a pre-release ([Releases](https://github.com/pirassic/janesixty/releases)); 1.0 follows the owner's host checks in Logic and Cubase.
+Status: v0.9.0 released 2026-10-06 ([Releases](https://github.com/pirassic/janesixty/releases)); 1.0 follows the owner's host checks in Logic and Cubase.
 
 ## Fidelity
 
